@@ -1416,30 +1416,30 @@ void CloseAllEAPositions()
 //  extended with blend-capable gradient tiers plus a new azure/violet
 //  "neural" accent range used by the Confidence Arc and Data-Rain column)
 //===================================================================
-#define C_OBSIDIAN      C'7,6,12'
-#define C_ONYX          C'12,10,20'
-#define C_CHARCOAL      C'18,14,30'
-#define C_CHARCOAL2     C'24,18,42'
-#define C_CRIMSON       C'130,40,200'
-#define C_DEEPCRIMSON   C'80,20,140'
-#define C_BLOOD         C'40,10,80'
-#define C_EMBER         C'220,60,160'
-#define C_GOLD          C'160,100,240'
-#define C_GOLDBRIGHT    C'210,140,255'
-#define C_GOLDDIM       C'90,50,140'
-#define C_BRASS         C'110,70,180'
-#define C_IVORY         C'200,188,240'
-#define C_SLATE         C'80,76,140'
-#define C_STEEL         C'46,42,90'
-#define C_WHITE         C'220,212,255'
-#define C_GREEN_OK      C'80,210,230'
-#define C_RED_BAD       C'220,60,140'
-#define C_SHADOW        C'3,2,7'
-#define C_AZURE         C'60,130,255'
-#define C_AZUREDIM      C'28,60,160'
-#define C_VIOLET        C'140,80,220'
-#define C_NEONMINT      C'80,200,255'
-#define C_NEONMINTDIM   C'28,80,140'
+#define C_OBSIDIAN      C'9,8,7'
+#define C_ONYX          C'15,13,11'
+#define C_CHARCOAL      C'22,19,16'
+#define C_CHARCOAL2     C'28,24,20'
+#define C_CRIMSON       C'150,18,26'
+#define C_DEEPCRIMSON   C'96,12,18'
+#define C_BLOOD         C'58,8,12'
+#define C_EMBER         C'205,60,46'
+#define C_GOLD          C'196,161,63'
+#define C_GOLDBRIGHT    C'255,214,110'
+#define C_GOLDDIM       C'120,98,42'
+#define C_BRASS         C'150,124,58'
+#define C_IVORY         C'224,214,192'
+#define C_SLATE         C'118,110,98'
+#define C_STEEL         C'70,64,56'
+#define C_WHITE         C'236,230,215'
+#define C_GREEN_OK      C'150,196,110'
+#define C_RED_BAD       C'205,60,46'
+#define C_SHADOW        C'4,3,3'
+#define C_AZURE         C'86,140,168'
+#define C_AZUREDIM      C'46,80,98'
+#define C_VIOLET        C'128,96,168'
+#define C_NEONMINT      C'110,214,180'
+#define C_NEONMINTDIM   C'50,96,84'
 
 // Vertex-IQ heat tiers: deep indigo (cold) -> violet -> electric lavender (hot)
 #define VTX_T0  C'7,6,12'
@@ -1930,19 +1930,19 @@ void MaybeCleanupArrows()
 //===================================================================
 void ApplyChartTheme()
 {
-   ChartSetInteger(0, CHART_COLOR_BACKGROUND,    C'8,6,18');
-   ChartSetInteger(0, CHART_COLOR_FOREGROUND,    C'70,62,130');
-   ChartSetInteger(0, CHART_COLOR_GRID,          C'16,12,32');
-   ChartSetInteger(0, CHART_COLOR_VOLUME,        C'40,28,80');
-   ChartSetInteger(0, CHART_COLOR_CHART_UP,      C'50,32,100');
-   ChartSetInteger(0, CHART_COLOR_CHART_DOWN,    C'100,22,55');
-   ChartSetInteger(0, CHART_COLOR_CANDLE_BULL,   C'65,42,145');
-   ChartSetInteger(0, CHART_COLOR_CANDLE_BEAR,   C'130,28,70');
-   ChartSetInteger(0, CHART_COLOR_CHART_LINE,    C'80,65,145');
-   ChartSetInteger(0, CHART_COLOR_BID,           C'45,38,90');
-   ChartSetInteger(0, CHART_COLOR_ASK,           C'65,56,130');
-   ChartSetInteger(0, CHART_COLOR_LAST,          C'80,70,150');
-   ChartSetInteger(0, CHART_COLOR_STOP_LEVEL,    C'160,22,70');
+   ChartSetInteger(0, CHART_COLOR_BACKGROUND,    C_OBSIDIAN);
+   ChartSetInteger(0, CHART_COLOR_FOREGROUND,    C_SLATE);
+   ChartSetInteger(0, CHART_COLOR_GRID,          C_ONYX);
+   ChartSetInteger(0, CHART_COLOR_VOLUME,        C_STEEL);
+   ChartSetInteger(0, CHART_COLOR_CHART_UP,      C_CHARCOAL);
+   ChartSetInteger(0, CHART_COLOR_CHART_DOWN,    C_BLOOD);
+   ChartSetInteger(0, CHART_COLOR_CANDLE_BULL,   C_GOLD);
+   ChartSetInteger(0, CHART_COLOR_CANDLE_BEAR,   C_CRIMSON);
+   ChartSetInteger(0, CHART_COLOR_CHART_LINE,    C_GOLDBRIGHT);
+   ChartSetInteger(0, CHART_COLOR_BID,           C_SLATE);
+   ChartSetInteger(0, CHART_COLOR_ASK,           C_IVORY);
+   ChartSetInteger(0, CHART_COLOR_LAST,          C_WHITE);
+   ChartSetInteger(0, CHART_COLOR_STOP_LEVEL,    C_CRIMSON);
    ChartSetInteger(0, CHART_MODE, CHART_CANDLES);
    ChartRedraw();
 }
