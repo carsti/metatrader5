@@ -1930,19 +1930,19 @@ void MaybeCleanupArrows()
 //===================================================================
 void ApplyChartTheme()
 {
-   ChartSetInteger(0, CHART_COLOR_BACKGROUND,    C'3,2,6');
-   ChartSetInteger(0, CHART_COLOR_FOREGROUND,    C'30,26,55');
-   ChartSetInteger(0, CHART_COLOR_GRID,          C'6,5,12');
-   ChartSetInteger(0, CHART_COLOR_VOLUME,        C'16,12,30');
-   ChartSetInteger(0, CHART_COLOR_CHART_UP,      C'16,10,30');
-   ChartSetInteger(0, CHART_COLOR_CHART_DOWN,    C'28,8,18');
-   ChartSetInteger(0, CHART_COLOR_CANDLE_BULL,   C'45,28,90');
-   ChartSetInteger(0, CHART_COLOR_CANDLE_BEAR,   C'75,16,45');
-   ChartSetInteger(0, CHART_COLOR_CHART_LINE,    C'45,38,80');
-   ChartSetInteger(0, CHART_COLOR_BID,           C'25,22,50');
-   ChartSetInteger(0, CHART_COLOR_ASK,           C'35,32,70');
-   ChartSetInteger(0, CHART_COLOR_LAST,          C'45,40,85');
-   ChartSetInteger(0, CHART_COLOR_STOP_LEVEL,    C'90,12,45');
+   ChartSetInteger(0, CHART_COLOR_BACKGROUND,    C'8,6,18');
+   ChartSetInteger(0, CHART_COLOR_FOREGROUND,    C'70,62,130');
+   ChartSetInteger(0, CHART_COLOR_GRID,          C'16,12,32');
+   ChartSetInteger(0, CHART_COLOR_VOLUME,        C'40,28,80');
+   ChartSetInteger(0, CHART_COLOR_CHART_UP,      C'50,32,100');
+   ChartSetInteger(0, CHART_COLOR_CHART_DOWN,    C'100,22,55');
+   ChartSetInteger(0, CHART_COLOR_CANDLE_BULL,   C'65,42,145');
+   ChartSetInteger(0, CHART_COLOR_CANDLE_BEAR,   C'130,28,70');
+   ChartSetInteger(0, CHART_COLOR_CHART_LINE,    C'80,65,145');
+   ChartSetInteger(0, CHART_COLOR_BID,           C'45,38,90');
+   ChartSetInteger(0, CHART_COLOR_ASK,           C'65,56,130');
+   ChartSetInteger(0, CHART_COLOR_LAST,          C'80,70,150');
+   ChartSetInteger(0, CHART_COLOR_STOP_LEVEL,    C'160,22,70');
    ChartSetInteger(0, CHART_MODE, CHART_CANDLES);
    ChartRedraw();
 }
@@ -2121,6 +2121,14 @@ void BuildDashboard()
    CreateLabelLower(DB_PREFIX+"v_spr",   "",             c1x+100, colTopY-122, FS_VALUE, C_IVORY, true);
    CreateLabelLower(DB_PREFIX+"l_arrows","Chart Arrows:",c1x, colTopY-142, FS_LABEL, C_IVORY);
    CreateLabelLower(DB_PREFIX+"v_arrows","",             c1x+100, colTopY-142, FS_VALUE, C_IVORY, true);
+   CreateLabelLower(DB_PREFIX+"l_trend_st","Trend Filter:",c1x, colTopY-162, FS_LABEL, C_IVORY);
+   CreateLabelLower(DB_PREFIX+"v_trend_st","",             c1x+100, colTopY-162, FS_VALUE, C_SLATE, true);
+   CreateLabelLower(DB_PREFIX+"l_tf_m5",  "M5",  c1x, colTopY-178, FS_LABEL, C_SLATE);
+   CreateLabelLower(DB_PREFIX+"v_tf_m5",  "--",  c1x+32, colTopY-178, FS_VALUE, C_SLATE, true);
+   CreateLabelLower(DB_PREFIX+"l_tf_m15", "M15", c1x+70, colTopY-178, FS_LABEL, C_SLATE);
+   CreateLabelLower(DB_PREFIX+"v_tf_m15", "--",  c1x+110, colTopY-178, FS_VALUE, C_SLATE, true);
+   CreateLabelLower(DB_PREFIX+"l_tf_h1",  "H1",  c1x+150, colTopY-178, FS_LABEL, C_SLATE);
+   CreateLabelLower(DB_PREFIX+"v_tf_h1",  "--",  c1x+176, colTopY-178, FS_VALUE, C_SLATE, true);
 
    // --- COLUMN 2 : GRID & RISK ---
    CreateLabelLower(DB_PREFIX+"sec_grid", "RISK STATISTICS", c2x, colTopY, FS_SECTION, C_GOLD, true);
@@ -2139,15 +2147,6 @@ void BuildDashboard()
 
    // --- COLUMN 3 : GRID LADDER (Vertex-IQ is embedded directly beneath it) ---
    CreateLabelLower(DB_PREFIX+"sec_ladder", "TRADE LADDER PROJECTOR", c3x, colTopY, FS_SECTION, C_GOLD, true);
-
-   // Multi-TF trend alignment display
-   CreateLabelLower(DB_PREFIX+"l_tf_m5",  "M5",  c3x,     colTopY-22, FS_LABEL, C_IVORY);
-   CreateLabelLower(DB_PREFIX+"v_tf_m5",  "--",  c3x+40,  colTopY-22, FS_VALUE, C_SLATE, true);
-   CreateLabelLower(DB_PREFIX+"l_tf_m15", "M15", c3x,     colTopY-40, FS_LABEL, C_IVORY);
-   CreateLabelLower(DB_PREFIX+"v_tf_m15", "--",  c3x+40,  colTopY-40, FS_VALUE, C_SLATE, true);
-   CreateLabelLower(DB_PREFIX+"l_tf_h1",  "H1",  c3x,     colTopY-58, FS_LABEL, C_IVORY);
-   CreateLabelLower(DB_PREFIX+"v_tf_h1",  "--",  c3x+40,  colTopY-58, FS_VALUE, C_SLATE, true);
-   CreateLabelLower(DB_PREFIX+"l_tf_lbl", "TREND FILTER:", c3x, colTopY-72, FS_SUBTITLE, C_GOLDDIM);
 
    // --- COLUMN 4 : ACCOUNT — magnified balance module up top ---
    CreateLabelLower(DB_PREFIX+"sec_acct", "ACCOUNT STATISTICS", c4x, colTopY, FS_SECTION, C_GOLD, true);
@@ -3256,6 +3255,12 @@ void UpdateDashboard()
    ObjectSetInteger(0, DB_PREFIX+"gauge_bear", OBJPROP_XDISTANCE, DB_X+16+150+bullW);
    ObjectSetInteger(0, DB_PREFIX+"gauge_marker", OBJPROP_XDISTANCE, DB_X+16+150+bullW-1);
 
+   // --- Trend filter status (col 1) ---
+   if(InpEnableTrendFilter)
+   { UpdLbl(DB_PREFIX+"v_trend_st", "ON", C_GREEN_OK); }
+   else
+   { UpdLbl(DB_PREFIX+"v_trend_st", "OFF", C_SLATE); }
+
    // --- Multi-TF trend alignment display ---
    if(InpEnableTrendFilter && g_ema_m5_handle != INVALID_HANDLE)
    {
@@ -3578,15 +3583,18 @@ void CreateCtrlBtn(string name, string text, int x, int y, int w, int h, color b
 
 void BuildControlBar()
 {
-   long cH = ChartGetInteger(0, CHART_HEIGHT_IN_PIXELS);
-   int  topY = (int)(cH - (DB_Y + DashboardHeight - 4));
-   int  bh   = 22;
-   int  bx   = DB_X + 2;
+   long cH  = ChartGetInteger(0, CHART_HEIGHT_IN_PIXELS);
+   // Place buttons inside the 34px header strip.
+   // Header strip top-from-chart-top = chartH - (DB_Y + DashboardHeight - 2)
+   int  hdrTop = (int)cH - (DB_Y + DashboardHeight - 2);
+   int  btnY   = hdrTop + 6;   // 6px below header strip top edge
+   int  bh     = 22;
+   int  bx     = DB_X + 330;   // start after title text (~310px wide)
 
-   CreateCtrlBtn(DB_PREFIX+"cb_pause",     "  PAUSE",      bx,       topY, 88,  bh, C_BLOOD,      C_IVORY);
-   CreateCtrlBtn(DB_PREFIX+"cb_closebuy",  "CLOSE BUY",   bx+92,    topY, 88,  bh, C_DEEPCRIMSON, C_IVORY);
-   CreateCtrlBtn(DB_PREFIX+"cb_closesell", "CLOSE SELL",  bx+184,   topY, 88,  bh, C_DEEPCRIMSON, C_IVORY);
-   CreateCtrlBtn(DB_PREFIX+"cb_anim",      "ANIM  ON",    DB_X+DashboardWidth-92, topY, 88, bh, C_VIOLET, C_WHITE);
+   CreateCtrlBtn(DB_PREFIX+"cb_pause",     "  PAUSE",     bx,      btnY, 90, bh, C_CHARCOAL2,   C_IVORY);
+   CreateCtrlBtn(DB_PREFIX+"cb_closebuy",  "CLOSE BUY",  bx+94,   btnY, 90, bh, C_DEEPCRIMSON, C_IVORY);
+   CreateCtrlBtn(DB_PREFIX+"cb_closesell", "CLOSE SELL", bx+188,  btnY, 90, bh, C_DEEPCRIMSON, C_IVORY);
+   CreateCtrlBtn(DB_PREFIX+"cb_anim",      "ANIM  ON",   DB_X+DashboardWidth-94, btnY, 90, bh, C_VIOLET, C_WHITE);
    ChartRedraw();
 }
 
