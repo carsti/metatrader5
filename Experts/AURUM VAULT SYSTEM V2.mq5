@@ -39,7 +39,7 @@ input int      N  = 10;                        // Maximum Positions per Basket
 input double   S1 = 13.0;                      // Initial Grid Spacing (Price)
 input double   S2 = 2.60;                      // Later Grid Spacing (Price)
 input double   T1 = 40.00;                     // Basket Profit Target per Lot (Account Currency)
-input double   E1 = 1.68;                      // Grid Lot Multiplier
+input double   E1 = 1.50;                      // Grid Lot Multiplier
 input double   R1 = 0.0;                       // Initial Lot Scaling Factor (0=Off, 1=100%, 0.2=20%)
 input double   P1 = 0.50;                      // Maximum Allowed Spread (Price)
 input int      P2 = 2;                         // Grid Additions Using Initial Spacing
@@ -91,6 +91,11 @@ input ENUM_AFTER_MAX_DD  InpAfterMaxDD            = DD_STOP_TRADING; // Action A
 
 input group "=== I. MARGIN PROTECTION ==="
 input double   InpMinMarginLevel = 300.0;          // Minimum Margin Level for new Grid Trades (%)
+
+input group "=== J2. UTC SESSION FILTER ==="
+input bool   InpUseSessionFilter  = true;   // Block new trades outside UTC session window
+input int    InpSessionStartHour  = 8;      // Session start (UTC hour, 0-23)
+input int    InpSessionEndHour    = 17;     // Session end (UTC hour, 0-23)
 
 input group "=== K. MULTI-TIMEFRAME TREND FILTER ==="
 input bool   InpEnableTrendFilter = false;         // Enable M5/M15/H1 Trend Alignment Filter
@@ -925,6 +930,13 @@ bool IsPositionTPCurrentlyValid(const ENUM_POSITION_TYPE type,
 bool IsGovernorAllowingNewTrade()
 {
    if(g_new_trades_paused) return false;
+   if(InpUseSessionFilter)
+   {
+      MqlDateTime dt;
+      TimeToStruct(TimeGMT(), dt);
+      if(dt.hour < InpSessionStartHour || dt.hour >= InpSessionEndHour)
+         return false;
+   }
    double margin_level = AccountInfoDouble(ACCOUNT_MARGIN_LEVEL);
    // margin_level is 0 when no positions are open — allow freely in that case
    if(margin_level > 0.0 && margin_level < InpMinMarginLevel)
