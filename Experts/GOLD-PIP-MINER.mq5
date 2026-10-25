@@ -85,6 +85,10 @@ input ENUM_AFTER_MAX_DD  InpAfterMaxDD            = DD_STOP_TRADING; // Action A
 input group "=== I. MARGIN PROTECTION ==="
 input double   InpMinMarginLevel = 300.0;          // Minimum Margin Level for new Grid Trades (%)
 
+input group "=== K. MULTI-TIMEFRAME TREND FILTER ==="
+input bool   InpEnableTrendFilter = false;         // Enable M5/M15/H1 Trend Alignment Filter
+input int    InpTrendEMAPeriod    = 50;            // EMA Period for Trend Direction
+
 input group "=== J. CHART DISPLAY SETTINGS ==="
 input bool     ShowTradeArrows     = false;    // Show MT5 Buy/Sell/TP/SL Chart Markers
 input bool     AutoCleanArrows     = true;     // Periodically Remove Chart Markers
@@ -141,6 +145,10 @@ datetime       g_last_tp_skip_log_time[2] = {0, 0};
 
 bool           g_max_dd_emergency_active   = false;
 bool           g_trading_stopped_by_max_dd = false;
+
+int            g_ema_m5_handle  = INVALID_HANDLE;
+int            g_ema_m15_handle = INVALID_HANDLE;
+int            g_ema_h1_handle  = INVALID_HANDLE;
 
 bool           g_news_blocked       = false;
 bool           g_calendar_available = true;
@@ -372,7 +380,7 @@ void ProcessBuyBasketState()
    }
 
    int buy_pos_count = GetPositionCount(POSITION_TYPE_BUY);
-   if(buy_pos_count < N && IsGovernorAllowingNewTrade())
+   if(buy_pos_count < N && IsGovernorAllowingNewTrade() && IsTrendAligned(POSITION_TYPE_BUY))
    {
       double lowest_buy_price = GetLowestEntryPrice(POSITION_TYPE_BUY);
       if(lowest_buy_price > 0.0)
@@ -428,7 +436,7 @@ void ProcessSellBasketState()
    }
 
    int sell_pos_count = GetPositionCount(POSITION_TYPE_SELL);
-   if(sell_pos_count < N && IsGovernorAllowingNewTrade())
+   if(sell_pos_count < N && IsGovernorAllowingNewTrade() && IsTrendAligned(POSITION_TYPE_SELL))
    {
       double highest_sell_price = GetHighestEntryPrice(POSITION_TYPE_SELL);
       if(highest_sell_price > 0.0)
@@ -920,6 +928,44 @@ bool IsGovernorAllowingNewTrade()
       return false;
    }
    return true;
+}
+
+bool IsTrendAligned(ENUM_POSITION_TYPE type)
+{
+   if(!InpEnableTrendFilter) return true;
+
+   double ema_m5[1], ema_m15[1], ema_h1[1];
+   if(CopyBuffer(g_ema_m5_handle,  0, 0, 1, ema_m5)  < 1 ||
+      CopyBuffer(g_ema_m15_handle, 0, 0, 1, ema_m15) < 1 ||
+      CopyBuffer(g_ema_h1_handle,  0, 0, 1, ema_h1)  < 1)
+   {
+      if(InpEnableLogs) Print("[TREND] EMA buffer read failed — allowing trade.");
+      return true;
+   }
+
+   double price = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   bool m5_bull  = price > ema_m5[0];
+   bool m15_bull = price > ema_m15[0];
+   bool h1_bull  = price > ema_h1[0];
+
+   if(type == POSITION_TYPE_BUY)
+   {
+      bool aligned = m5_bull && m15_bull && h1_bull;
+      if(!aligned && InpEnableLogs)
+         PrintFormat("[TREND] BUY blocked: M5=%s M15=%s H1=%s (price=%.5f EMA50: M5=%.5f M15=%.5f H1=%.5f)",
+                     m5_bull?"bull":"bear", m15_bull?"bull":"bear", h1_bull?"bull":"bear",
+                     price, ema_m5[0], ema_m15[0], ema_h1[0]);
+      return aligned;
+   }
+   else
+   {
+      bool aligned = !m5_bull && !m15_bull && !h1_bull;
+      if(!aligned && InpEnableLogs)
+         PrintFormat("[TREND] SELL blocked: M5=%s M15=%s H1=%s (price=%.5f EMA50: M5=%.5f M15=%.5f H1=%.5f)",
+                     m5_bull?"bull":"bear", m15_bull?"bull":"bear", h1_bull?"bull":"bear",
+                     price, ema_m5[0], ema_m15[0], ema_h1[0]);
+      return aligned;
+   }
 }
 
 double GetProfitPerUnitPerLot()
@@ -1627,6 +1673,18 @@ int OnInit()
    g_rsi_handle = iRSI(_Symbol, PERIOD_H1, 14, PRICE_CLOSE);
    g_atr_handle = iATR(_Symbol, PERIOD_H1, 14);
 
+   if(InpEnableTrendFilter)
+   {
+      g_ema_m5_handle  = iMA(_Symbol, PERIOD_M5,  InpTrendEMAPeriod, 0, MODE_EMA, PRICE_CLOSE);
+      g_ema_m15_handle = iMA(_Symbol, PERIOD_M15, InpTrendEMAPeriod, 0, MODE_EMA, PRICE_CLOSE);
+      g_ema_h1_handle  = iMA(_Symbol, PERIOD_H1,  InpTrendEMAPeriod, 0, MODE_EMA, PRICE_CLOSE);
+      if(g_ema_m5_handle == INVALID_HANDLE || g_ema_m15_handle == INVALID_HANDLE || g_ema_h1_handle == INVALID_HANDLE)
+      {
+         Print("[EA ERROR] Failed to create EMA indicator handles for trend filter.");
+         return INIT_FAILED;
+      }
+   }
+
    ArrayInitialize(g_spark_values, 0.0);
    g_spark_filled = 0;
 
@@ -1677,8 +1735,11 @@ int OnInit()
 void OnDeinit(const int reason)
 {
    DeleteAllDashboard();
-   if(g_rsi_handle != INVALID_HANDLE) IndicatorRelease(g_rsi_handle);
-   if(g_atr_handle != INVALID_HANDLE) IndicatorRelease(g_atr_handle);
+   if(g_rsi_handle  != INVALID_HANDLE) IndicatorRelease(g_rsi_handle);
+   if(g_atr_handle  != INVALID_HANDLE) IndicatorRelease(g_atr_handle);
+   if(g_ema_m5_handle  != INVALID_HANDLE) IndicatorRelease(g_ema_m5_handle);
+   if(g_ema_m15_handle != INVALID_HANDLE) IndicatorRelease(g_ema_m15_handle);
+   if(g_ema_h1_handle  != INVALID_HANDLE) IndicatorRelease(g_ema_h1_handle);
    Comment("");
    LogMessage(StringFormat("EA Deinitialized. Reason code: %d", reason));
 }
