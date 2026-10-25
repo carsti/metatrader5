@@ -69,15 +69,15 @@ input int      T7 = 30;                        // Resume After News (Minutes)
 input string   InpExtraCurrencies = "";        // Extra currencies for news filter, comma-separated (e.g. EUR,GBP)
 
 input bool     ShowDashboard      = true;      // Show the Sovereign dashboard
-input bool     ShowVertexIQ       = true;      // Show the Vertex-IQ heat panel
+bool           ShowVertexIQ       = true;      // Show the Vertex-IQ heat panel
 input int      VertexRows         = 16;        // Heat cells per timeframe band
 input int      VertexCols         = 6;         // Number of timeframe bands (stacked)
-input bool     ShowAdvancedPanels = true;      // Show sparkline / ladder / thermometer / ticker / spinner
+bool           ShowAdvancedPanels = true;      // Show sparkline / ladder / thermometer / ticker / spinner
 input bool     ShowSessionClock   = true;      // Show live broker session clock panel
 input bool     ShowMarketPulse    = true;      // Show recent-candle market pulse strip
 input bool     ShowVolatilityGauge= true;      // Show ATR-based volatility gauge
 input bool     ShowConfidenceArc  = true;      // Show the multi-factor confidence arc
-input bool     ShowDataRain       = true;      // Show the ambient data-rain accent column
+bool           ShowDataRain       = true;      // Show the ambient data-rain accent column
 input int      AnimationSpeed     = 1;         // Animation speed multiplier (1=normal, 2=fast, 3=very fast)
 
 
@@ -128,7 +128,8 @@ enum ENUM_EA_STATE
    STATE_BUY_BASKET_ACTIVE,
    STATE_SELL_BASKET_ACTIVE,
    STATE_CLOSING_BASKET,
-   STATE_RESETTING_CYCLE
+   STATE_RESETTING_CYCLE,
+   STATE_HEDGE_LOCKED
 };
 
 //+------------------------------------------------------------------+
@@ -1419,6 +1420,17 @@ void CloseAllEAPositions()
 //  that are not in the GPM trading logic section above.
 //===================================================================
 
+// Radar / EKG / glitch animation globals (from AURUM trading section)
+int      g_glitch_ticks = 0;
+int      g_ekg_pos      = 0;
+#define  RADAR_DOTS 10
+int      g_radar_cx = 0, g_radar_cy = 0, g_radar_radius = 9;
+int      g_radar_x[RADAR_DOTS];
+int      g_radar_y[RADAR_DOTS];
+int      g_radar_head = 0;
+int      g_radar_ping = 0;
+#define  PRESS_SEGS 10
+
 // Runtime flags for AURUM VAULT UI (guard, pause, etc.)
 bool     g_dd_guard_armed    = false;
 double   g_dd_limit_override = 0.0;
@@ -1479,26 +1491,6 @@ void CloseActiveBasket(ENUM_POSITION_TYPE type)
    g_state = STATE_RESETTING_CYCLE;
 }
 
-// Animation helpers (used by UpdateGuardButton and UpdateDashboard)
-double BreathWave(double t) { return 0.5 + 0.5 * MathSin(t * 0.3); }
-color BlendColor(color c1, color c2, double t)
-{
-   int r  = (int)((1.0 - t) * ((c1 >> 16) & 0xFF) + t * ((c2 >> 16) & 0xFF));
-   int gc = (int)((1.0 - t) * ((c1 >> 8)  & 0xFF) + t * ((c2 >> 8)  & 0xFF));
-   int b  = (int)((1.0 - t) * (c1 & 0xFF)          + t * (c2 & 0xFF));
-   return (color)((r << 16) | (gc << 8) | b);
-}
-
-// UI label helper (used throughout the dashboard)
-void UpdLbl(string name, string text, color fg)
-{
-   if(ObjectFind(0, name) >= 0)
-   {
-      ObjectSetString(0, name, OBJPROP_TEXT, text);
-      ObjectSetInteger(0, name, OBJPROP_COLOR, fg);
-   }
-}
-
 // EMA value helper (used by TrendDirTF for per-TF display; stubs return 0)
 double GetEMAValue(const int handle)
 {
@@ -1550,7 +1542,7 @@ int BasketAgeHours(const ENUM_POSITION_TYPE type)
 bool IsLossPauseActive()              { return false; }
 bool IsHardEquityStopHit()            { return false; }
 bool FridayRestricted()               { return false; }
-bool LogThrottle(int id, int secs)    { (void)id; (void)secs; return true; }
+bool LogThrottle(int id, int secs)    { id = id; secs = secs; return true; }
 
 //  AURUM PULSE THEME — Azure -> Violet -> Crimson on Obsidian.
 //  Gradient tiers blue-violet-red across gauges, arcs, ladders,
@@ -1840,7 +1832,7 @@ void TogglePause()
 
 void ManualCloseBasket(const ENUM_POSITION_TYPE type)
 {
-   if(GetPositionCount((int)type) == 0) { LogMessage("Manual close ignored: no basket."); return; }
+   if(GetPositionCount(type) == 0) { LogMessage("Manual close ignored: no basket."); return; }
    LogMessage(StringFormat("Manual close %s from panel.", EnumToString(type)));
    CloseActiveBasket(type);
    UpdateControlDeck();
@@ -1880,9 +1872,9 @@ void UpdateControlDeck()
    bool blinkOn = ((AnimationTick / 5) % 2) == 0;
    if(g_trade_paused) UpdBtn(DB_PREFIX+"pause_btn", "RESUME", blinkOn ? C_VIOLETBRIGHT : C_CHARCOAL2, C_WHITE);
    else UpdBtn(DB_PREFIX+"pause_btn", "PAUSE", C_CHARCOAL2, C_SLATE);
-   if(GetPositionCount((int)POSITION_TYPE_BUY) > 0) UpdBtn(DB_PREFIX+"closeB_btn", "CLOSE BUY", C_AZURE, C_OBSIDIAN);
+   if(GetPositionCount(POSITION_TYPE_BUY) > 0) UpdBtn(DB_PREFIX+"closeB_btn", "CLOSE BUY", C_AZURE, C_OBSIDIAN);
    else UpdBtn(DB_PREFIX+"closeB_btn", "CLOSE BUY", C_CHARCOAL2, C_STEEL);
-   if(GetPositionCount((int)POSITION_TYPE_SELL) > 0) UpdBtn(DB_PREFIX+"closeS_btn", "CLOSE SELL", C_AZURE, C_OBSIDIAN);
+   if(GetPositionCount(POSITION_TYPE_SELL) > 0) UpdBtn(DB_PREFIX+"closeS_btn", "CLOSE SELL", C_AZURE, C_OBSIDIAN);
    else UpdBtn(DB_PREFIX+"closeS_btn", "CLOSE SELL", C_CHARCOAL2, C_STEEL);
    if(g_session_enabled) UpdBtn(DB_PREFIX+"sess_btn", "SESSION: ON", C_AZUREDIM, C_WHITE);
    else UpdBtn(DB_PREFIX+"sess_btn", "SESSION: OFF", C_CHARCOAL2, C_SLATE);
@@ -2185,7 +2177,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
       trans.type == TRADE_TRANSACTION_DEAL_ADD ||
       trans.type == TRADE_TRANSACTION_POSITION)
    {
-      if(IsOurMagic((long)trans.position) || IsOurMagic((long)trans.order_magic))
+      if(IsOurMagic((long)trans.position) || IsOurMagic((long)trans.order))
          ReconstructState();
    }
 }
@@ -3175,8 +3167,8 @@ void BuildTicker()
 
 void RebuildTickerMessages()
 {
-   int buyCt  = GetPositionCount((int)POSITION_TYPE_BUY);
-   int sellCt = GetPositionCount((int)POSITION_TYPE_SELL);
+   int buyCt  = GetPositionCount(POSITION_TYPE_BUY);
+   int sellCt = GetPositionCount(POSITION_TYPE_SELL);
    string basketStr = (buyCt>0 && sellCt>0) ? "HEDGE LOCKED" :
                       (buyCt>0) ? "BUY  ACTIVE ("+IntegerToString(buyCt)+" pos)" :
                       (sellCt>0) ? "SELL  ACTIVE ("+IntegerToString(sellCt)+" pos)" : "NO ACTIVE BASKET";
@@ -3561,8 +3553,8 @@ void UpdateDashboard()
 
    UpdLbl(DB_PREFIX+"v_state", StateToText(g_state), C_AZUREBRIGHT);
 
-   int buyCt  = GetPositionCount((int)POSITION_TYPE_BUY);
-   int sellCt = GetPositionCount((int)POSITION_TYPE_SELL);
+   int buyCt  = GetPositionCount(POSITION_TYPE_BUY);
+   int sellCt = GetPositionCount(POSITION_TYPE_SELL);
    string basketStr = (buyCt>0 && sellCt>0) ? "HEDGE LOCKED" : (buyCt>0) ? "BUY ACTIVE" : (sellCt>0) ? "SELL ACTIVE" : "NONE";
    if(buyCt > 0 && sellCt == 0) { int _ah = BasketAgeHours(POSITION_TYPE_BUY); if(_ah >= 0) basketStr += " " + IntegerToString(_ah) + "h"; }
    else if(sellCt > 0 && buyCt == 0) { int _ah = BasketAgeHours(POSITION_TYPE_SELL); if(_ah >= 0) basketStr += " " + IntegerToString(_ah) + "h"; }
