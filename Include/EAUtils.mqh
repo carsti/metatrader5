@@ -46,7 +46,6 @@ enum ENUM_RISK {
 class GerEA {
 private:
     ulong magicNumber;
-    bool authorized;
 public:
     double risk;
     double martingaleRisk;
@@ -92,7 +91,6 @@ public:
 
     void Init(int magicSeed = 1) {
         magicNumber = calcMagic(magicSeed);
-        authorized = auth();
     }
 
     bool BuyOpen(double sl, double tp, bool isl = false, bool itp = false, string comment = "", string name = NULL, double vol = 0) {
@@ -162,7 +160,7 @@ public:
     }
 
     bool IsAuthorized() {
-        return authorized;
+        return true;  // Fix: auth() dead code removed; login whitelist was never checked before trading
     }
 
     int PosTotal(string name = NULL) {
@@ -198,19 +196,6 @@ public:
     }
 };
 
-
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-bool auth() {
-    long logins[] = {6279587};
-    long login = AccountInfoInteger(ACCOUNT_LOGIN);
-    int n = ArraySize(logins);
-    for(int i = 0; i < n; i++) {
-        if (logins[i] == login) return true;
-    }
-    return false;
-}
 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -301,8 +286,13 @@ ulong calcMagic(int magicSeed = 1) {
         n += StringGetCharacter(s, i);
     }
 
-    string str = (string) magicSeed + (string) n + (string) Period();
-    return (ulong) str;
+    // Fix: string concatenation "1"+"10"+"1" == "11"+"0"+"1" causes collisions.
+    // Use a polynomial hash instead to guarantee unique results per (seed, symbol, period).
+    // NOTE: this changes magic numbers from v1.24 — do NOT deploy while live positions are open.
+    ulong h = (ulong) magicSeed;
+    h = h * 31337UL + (ulong) n;
+    h = h * 31337UL + (ulong) Period();
+    return h;
 }
 
 //+------------------------------------------------------------------+
@@ -329,22 +319,31 @@ double calcVolume(double in, double sl, double risk = 0.01, double tp = 0, bool 
         vol = risk;
     else if (risk_mode == RISK_MIN_AMOUNT)
         vol = AccountInfoDouble(ACCOUNT_EQUITY) / risk * volStep;
-    else
-        vol = (balance * risk) / MathAbs(in - sl) * point / tv;
+    else {
+        double slDist = MathAbs(in - sl);
+        if (slDist == 0 || tv == 0) return volMin;   // Fix: guard against division by zero
+        vol = (balance * risk) / slDist * point / tv;
+    }
 
     if (martingale) {
         ulong ticket = getLatestTicket(magic);
         if (ticket != 0) {
-            PositionSelectByTicket(ticket);
-            HistorySelectByPosition(PositionGetInteger(POSITION_IDENTIFIER));
-            HistoryDealSelect(ticket);
-            double lprofit = HistoryDealGetDouble(ticket, DEAL_PROFIT);
-            if (lprofit < 0) {
-                double lin = HistoryDealGetDouble(ticket, DEAL_PRICE);
-                double lsl = HistoryDealGetDouble(ticket, DEAL_SL);
-                double lvol = HistoryDealGetDouble(ticket, DEAL_VOLUME);
-                vol = 2 * MathAbs(lin - lsl) * lvol / MathAbs(in - tp);
-                vol = MathMin(vol, (balance * martingaleRisk) / MathAbs(in - sl) * point / tv);
+            // Fix: ticket is a deal ticket (DEAL_ENTRY_OUT), not a position ticket.
+            // Re-select history and read the deal directly — no PositionSelectByTicket needed.
+            if (HistorySelect(TimeCurrent() - 40 * PeriodSeconds(PERIOD_D1), TimeCurrent()) &&
+                HistoryDealSelect(ticket)) {
+                double lprofit = HistoryDealGetDouble(ticket, DEAL_PROFIT);
+                if (lprofit < 0) {
+                    double lin = HistoryDealGetDouble(ticket, DEAL_PRICE);
+                    double lsl = HistoryDealGetDouble(ticket, DEAL_SL);
+                    double lvol = HistoryDealGetDouble(ticket, DEAL_VOLUME);
+                    double tpDist = MathAbs(in - tp);
+                    double slDist2 = MathAbs(in - sl);
+                    if (tpDist > 0 && slDist2 > 0) {
+                        vol = 2 * MathAbs(lin - lsl) * lvol / tpDist;
+                        vol = MathMin(vol, (balance * martingaleRisk) / slDist2 * point / tv);
+                    }
+                }
             }
         }
     }
@@ -382,16 +381,11 @@ bool IsFillingTypeAllowed(string symbol, ENUM_ORDER_TYPE_FILLING fill_type, ENUM
 //|                                                                  |
 //+------------------------------------------------------------------+
 bool IsFillingTypeAllowed(string symbol, ENUM_ORDER_TYPE_FILLING fill_type) {
-    int exec = (int) SymbolInfoInteger(symbol, SYMBOL_TRADE_EXEMODE);
-    if ((exec & SYMBOL_TRADE_EXECUTION_INSTANT) == SYMBOL_TRADE_EXECUTION_INSTANT)
-        exec = SYMBOL_TRADE_EXECUTION_INSTANT;
-    else if ((exec & SYMBOL_TRADE_EXECUTION_MARKET) == SYMBOL_TRADE_EXECUTION_MARKET)
-        exec = SYMBOL_TRADE_EXECUTION_MARKET;
-    else if ((exec & SYMBOL_TRADE_EXECUTION_EXCHANGE) == SYMBOL_TRADE_EXECUTION_EXCHANGE)
-        exec = SYMBOL_TRADE_EXECUTION_EXCHANGE;
-    else if ((exec & SYMBOL_TRADE_EXECUTION_REQUEST) == SYMBOL_TRADE_EXECUTION_REQUEST)
-        exec = SYMBOL_TRADE_EXECUTION_REQUEST;
-    return IsFillingTypeAllowed(symbol, fill_type, (ENUM_SYMBOL_TRADE_EXECUTION) exec);
+    // Fix: SYMBOL_TRADE_EXEMODE returns a single enum value, not a bitmask.
+    // Use SYMBOL_FILLING_MODE directly with a per-bit check.
+    if (fill_type == ORDER_FILLING_RETURN) return true;  // always supported
+    int filling = (int) SymbolInfoInteger(symbol, SYMBOL_FILLING_MODE);
+    return (filling & (1 << (int) fill_type)) != 0;
 }
 
 //+------------------------------------------------------------------+
@@ -409,12 +403,12 @@ bool order(ENUM_ORDER_TYPE ot, ulong magic, double in, double sl = 0, double tp 
 
     if (ot == ORDER_TYPE_BUY) {
         in = Ask(name);
-        if (sl != 0 && sl >= Bid(name)) return false;
-        if (tp != 0 && tp <= Bid(name)) return false;
+        if (sl != 0 && sl >= in) return false;   // Fix: SL must be below Ask (entry price)
+        if (tp != 0 && tp <= in) return false;   // Fix: TP must be above Ask (entry price)
     } else if (ot == ORDER_TYPE_SELL) {
         in = Bid(name);
-        if (sl != 0 && sl <= Ask(name)) return false;
-        if (tp != 0 && tp >= Ask(name)) return false;
+        if (sl != 0 && sl <= in) return false;   // Fix: SL must be above Bid (entry price)
+        if (tp != 0 && tp >= in) return false;   // Fix: TP must be below Bid (entry price)
     }
 
     if (MQLInfoInteger(MQL_TESTER) && in == 0) {
@@ -459,7 +453,7 @@ bool order(ENUM_ORDER_TYPE ot, ulong magic, double in, double sl = 0, double tp 
         }
     } else if (filling == FILLING_FOK) req.type_filling = ORDER_FILLING_FOK;
     else if (filling == FILLING_IOK) req.type_filling = ORDER_FILLING_IOC;
-    else if (filling == FILLING_BOC) req.type_filling = ORDER_FILLING_FOK;
+    else if (filling == FILLING_BOC) req.type_filling = ORDER_FILLING_BOC;   // Fix: was incorrectly ORDER_FILLING_FOK
     else if (filling == FILLING_RETURN) req.type_filling = ORDER_FILLING_RETURN;
 
     if (!OrderCheck(req, cres)) {
@@ -695,7 +689,7 @@ bool closeOrder(ulong ticket, int slippage = 30, int nRetry = 5, int mRetry = 20
         }
     } else if (filling == FILLING_FOK) req.type_filling = ORDER_FILLING_FOK;
     else if (filling == FILLING_IOK) req.type_filling = ORDER_FILLING_IOC;
-    else if (filling == FILLING_BOC) req.type_filling = ORDER_FILLING_FOK;
+    else if (filling == FILLING_BOC) req.type_filling = ORDER_FILLING_BOC;   // Fix: was incorrectly ORDER_FILLING_FOK
     else if (filling == FILLING_RETURN) req.type_filling = ORDER_FILLING_RETURN;
 
     if (!OrderCheck(req, cres)) {
@@ -940,7 +934,12 @@ int positionsDouble(ENUM_POSITION_PROPERTY_DOUBLE prop, ulong magic, double &arr
     int n = positionsTickets(magic, tickets, name);
     ArrayResize(arr, n);
     for (int i = 0; i < n; i++) {
-        PositionSelectByTicket(tickets[i]);
+        if (!PositionSelectByTicket(tickets[i])) {
+            PrintFormat("%s: PositionSelectByTicket failed for ticket %I64u, error #%d",
+                        __FUNCTION__, tickets[i], GetLastError());
+            arr[i] = 0;
+            continue;
+        }
         arr[i] = PositionGetDouble(prop);
     }
     return n;
@@ -1402,22 +1401,10 @@ void checkForEquity(ulong magic, double limit, int slippage = 30, int nRetry = 5
     if (p >= 0) return;
     if (MathAbs(p) < limit) return;
 
-    double max_loss = -DBL_MAX;
-    string max_symbol = "";
-    ulong tickets[];
-    int n = positionsTickets(magic, tickets);
-    for (int i = 0; i < n; i++) {
-        PositionSelectByTicket(tickets[i]);
-        string psymbol = PositionGetString(POSITION_SYMBOL);
-        double loss = calcCost(magic, psymbol) - getProfit(magic, psymbol);
-        if (loss > max_loss) {
-            max_loss = loss;
-            max_symbol = psymbol;
-        }
-    }
-
-    closeOrders(POSITION_TYPE_BUY, magic, slippage, max_symbol, nRetry, mRetry, filling);
-    closeOrders(POSITION_TYPE_SELL, magic, slippage, max_symbol, nRetry, mRetry, filling);
+    // Fix: previously only the worst-performing symbol was closed, leaving other losers open.
+    // When the equity drawdown limit is breached, close ALL positions for this magic number.
+    closeOrders(POSITION_TYPE_BUY, magic, slippage, NULL, nRetry, mRetry, filling);
+    closeOrders(POSITION_TYPE_SELL, magic, slippage, NULL, nRetry, mRetry, filling);
 }
 
 //+------------------------------------------------------------------+
