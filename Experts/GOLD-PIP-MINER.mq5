@@ -150,6 +150,8 @@ int            g_ema_m5_handle  = INVALID_HANDLE;
 int            g_ema_m15_handle = INVALID_HANDLE;
 int            g_ema_h1_handle  = INVALID_HANDLE;
 
+bool           g_animations_enabled = true;
+
 bool           g_news_blocked       = false;
 bool           g_calendar_available = true;
 datetime       g_last_news_scan     = 0;
@@ -1381,68 +1383,68 @@ void CloseAllEAPositions()
 //  extended with blend-capable gradient tiers plus a new azure/violet
 //  "neural" accent range used by the Confidence Arc and Data-Rain column)
 //===================================================================
-#define C_OBSIDIAN      C'9,8,7'
-#define C_ONYX          C'15,13,11'
-#define C_CHARCOAL      C'22,19,16'
-#define C_CHARCOAL2     C'28,24,20'
-#define C_CRIMSON       C'150,18,26'
-#define C_DEEPCRIMSON   C'96,12,18'
-#define C_BLOOD         C'58,8,12'
-#define C_EMBER         C'205,60,46'
-#define C_GOLD          C'196,161,63'
-#define C_GOLDBRIGHT    C'255,214,110'
-#define C_GOLDDIM       C'120,98,42'
-#define C_BRASS         C'150,124,58'
-#define C_IVORY         C'224,214,192'
-#define C_SLATE         C'118,110,98'
-#define C_STEEL         C'70,64,56'
-#define C_WHITE         C'236,230,215'
-#define C_GREEN_OK      C'150,196,110'
-#define C_RED_BAD       C'205,60,46'
-#define C_SHADOW        C'4,3,3'
-#define C_AZURE         C'86,140,168'
-#define C_AZUREDIM      C'46,80,98'
-#define C_VIOLET        C'128,96,168'
-#define C_NEONMINT      C'110,214,180'
-#define C_NEONMINTDIM   C'50,96,84'
+#define C_OBSIDIAN      C'7,6,12'
+#define C_ONYX          C'12,10,20'
+#define C_CHARCOAL      C'18,14,30'
+#define C_CHARCOAL2     C'24,18,42'
+#define C_CRIMSON       C'130,40,200'
+#define C_DEEPCRIMSON   C'80,20,140'
+#define C_BLOOD         C'40,10,80'
+#define C_EMBER         C'220,60,160'
+#define C_GOLD          C'160,100,240'
+#define C_GOLDBRIGHT    C'210,140,255'
+#define C_GOLDDIM       C'90,50,140'
+#define C_BRASS         C'110,70,180'
+#define C_IVORY         C'200,188,240'
+#define C_SLATE         C'80,76,140'
+#define C_STEEL         C'46,42,90'
+#define C_WHITE         C'220,212,255'
+#define C_GREEN_OK      C'80,210,230'
+#define C_RED_BAD       C'220,60,140'
+#define C_SHADOW        C'3,2,7'
+#define C_AZURE         C'60,130,255'
+#define C_AZUREDIM      C'28,60,160'
+#define C_VIOLET        C'140,80,220'
+#define C_NEONMINT      C'80,200,255'
+#define C_NEONMINTDIM   C'28,80,140'
 
-// Vertex-IQ heat tiers: obsidian (cold) -> crimson -> gold (hot)
-#define VTX_T0  C'9,8,7'
-#define VTX_T1  C'26,10,10'
-#define VTX_T2  C'46,14,14'
-#define VTX_T3  C'70,16,16'
-#define VTX_T4  C'96,20,18'
-#define VTX_T5  C'124,26,20'
-#define VTX_T6  C'150,45,24'
-#define VTX_T7  C'178,80,30'
-#define VTX_T8  C'196,120,40'
-#define VTX_T9  C'214,160,60'
-#define VTX_T10 C'255,214,110'
+// Vertex-IQ heat tiers: deep indigo (cold) -> violet -> electric lavender (hot)
+#define VTX_T0  C'7,6,12'
+#define VTX_T1  C'14,10,28'
+#define VTX_T2  C'24,14,50'
+#define VTX_T3  C'38,18,80'
+#define VTX_T4  C'56,22,110'
+#define VTX_T5  C'80,32,150'
+#define VTX_T6  C'110,42,190'
+#define VTX_T7  C'148,58,215'
+#define VTX_T8  C'180,80,235'
+#define VTX_T9  C'205,106,248'
+#define VTX_T10 C'220,150,255'
 
-// Volatility-gauge tiers: azure (calm) -> violet -> crimson (extreme)
-#define VOL_T0  C'9,8,7'
-#define VOL_T1  C'20,28,34'
-#define VOL_T2  C'30,48,58'
-#define VOL_T3  C'46,80,98'
-#define VOL_T4  C'70,90,130'
-#define VOL_T5  C'96,90,150'
-#define VOL_T6  C'128,96,168'
-#define VOL_T7  C'160,86,150'
-#define VOL_T8  C'190,70,110'
-#define VOL_T9  C'205,60,46'
-#define VOL_T10 C'255,120,70'
+// Volatility-gauge tiers: blue (calm) -> violet -> hot pink (extreme)
+#define VOL_T0  C'7,6,12'
+#define VOL_T1  C'16,22,55'
+#define VOL_T2  C'26,42,90'
+#define VOL_T3  C'38,68,140'
+#define VOL_T4  C'54,88,190'
+#define VOL_T5  C'84,66,185'
+#define VOL_T6  C'120,52,210'
+#define VOL_T7  C'162,50,195'
+#define VOL_T8  C'200,50,165'
+#define VOL_T9  C'222,52,130'
+#define VOL_T10 C'240,62,105'
 
-// Confidence-arc tiers: crimson (low conviction) -> gold -> neon-mint (high conviction)
-#define CONF_T0  C'96,12,18'
-#define CONF_T1  C'150,18,26'
-#define CONF_T2  C'178,80,30'
-#define CONF_T3  C'196,120,40'
-#define CONF_T4  C'196,161,63'
-#define CONF_T5  C'214,160,60'
-#define CONF_T6  C'255,214,110'
-#define CONF_T7  C'190,214,150'
-#define CONF_T8  C'150,214,170'
-#define CONF_T9  C'110,214,180'
+// Confidence-arc tiers: hot pink (low) -> violet -> electric blue (high conviction)
+#define CONF_T0  C'200,40,110'
+#define CONF_T1  C'180,40,140'
+#define CONF_T2  C'158,42,168'
+#define CONF_T3  C'138,52,196'
+#define CONF_T4  C'118,62,218'
+#define CONF_T5  C'96,76,235'
+#define CONF_T6  C'74,106,248'
+#define CONF_T7  C'56,140,255'
+#define CONF_T8  C'50,178,255'
+#define CONF_T9  C'78,215,255'
 
 #define DB_PREFIX  "GPM7Q_"     // Main Sovereign dashboard
 #define VX_PREFIX  "GPM7Q_VX_"  // Vertex-IQ compact heat-matrix panel
@@ -1617,7 +1619,7 @@ int OnInit()
    ObjectSetString (0, "c", OBJPROP_TEXT,       "%");
    ObjectSetString (0, "c", OBJPROP_FONT,       "Webdings");
    ObjectSetInteger(0, "c", OBJPROP_FONTSIZE,   60);
-   ObjectSetInteger(0, "c", OBJPROP_COLOR,      C'28,24,20');
+   ObjectSetInteger(0, "c", OBJPROP_COLOR,      C'24,18,42');
 
    //--- force it to render ON TOP (foreground), not behind the dashboard
    ObjectSetInteger(0, "c", OBJPROP_BACK,       false);
@@ -1694,6 +1696,7 @@ int OnInit()
    if(ShowDashboard)
    {
       BuildDashboard();
+      BuildAnimButtons();
       BuildSpinner();
       BuildHexCore();
       if(ShowAdvancedPanels)
@@ -1717,7 +1720,7 @@ int OnInit()
 
    Print("===================================================");
    Print("  GOLD-PIP MINER EA V6 (MQ5) INITIALIZED");
-   Print("  Theme            : SOVEREIGN GOLD-BULLET IV (CRIMSON/GOLD/OBSIDIAN/NEON-MINT)");
+   Print("  Theme            : NEON VOID V (VIOLET/PINK/BLUE/ELECTRIC LAVENDER)");
    Print("  Dashboard        : Hybrid advanced layout | magnified balance card | "+IntegerToString(DashboardWidth)+"x"+IntegerToString(DashboardHeight));
    Print("  Sub-Panels       : "+(ShowAdvancedPanels ? "ON (sparkline, grid ladder, risk thermometer, ticker, tri-ring spinner)" : "OFF"));
    Print("  Extra Panels     : Clock="+(ShowSessionClock?"ON":"OFF")+" | Pulse="+(ShowMarketPulse?"ON":"OFF")+" | VolGauge="+(ShowVolatilityGauge?"ON":"OFF")+" | ConfArc="+(ShowConfidenceArc?"ON":"OFF")+" | DataRain="+(ShowDataRain?"ON":"OFF"));
@@ -3051,10 +3054,14 @@ void RefreshDashboard()
    if(ShowDashboard)
    {
       UpdateDashboard();
-      UpdateSpinner();
-      UpdateHexCore();
-      AnimateCornerGlow();
-      AnimateHeaderScan();
+      UpdateAnimButton();
+      if(g_animations_enabled)
+      {
+         UpdateSpinner();
+         UpdateHexCore();
+         AnimateCornerGlow();
+         AnimateHeaderScan();
+      }
       if(ShowAdvancedPanels)
       {
          UpdateSparkline();
@@ -3486,4 +3493,55 @@ void DeleteAllDashboard()
    }
    ChartRedraw();
 }
+
+void BuildAnimButtons()
+{
+   string btn = DB_PREFIX + "btn_anim";
+   ObjectCreate(0, btn, OBJ_BUTTON, 0, 0, 0);
+   ObjectSetInteger(0, btn, OBJPROP_CORNER,       0);
+   ObjectSetInteger(0, btn, OBJPROP_XDISTANCE,    DB_X + DashboardWidth - 138);
+   ObjectSetInteger(0, btn, OBJPROP_YDISTANCE,    DB_Y + 8);
+   ObjectSetInteger(0, btn, OBJPROP_XSIZE,        130);
+   ObjectSetInteger(0, btn, OBJPROP_YSIZE,        22);
+   ObjectSetString (0, btn, OBJPROP_TEXT,         "ANIM  ON");
+   ObjectSetString (0, btn, OBJPROP_FONT,         "Arial Bold");
+   ObjectSetInteger(0, btn, OBJPROP_FONTSIZE,     8);
+   ObjectSetInteger(0, btn, OBJPROP_COLOR,        C_WHITE);
+   ObjectSetInteger(0, btn, OBJPROP_BGCOLOR,      C_VIOLET);
+   ObjectSetInteger(0, btn, OBJPROP_BORDER_COLOR, C_GOLDBRIGHT);
+   ObjectSetInteger(0, btn, OBJPROP_STATE,        false);
+   ObjectSetInteger(0, btn, OBJPROP_SELECTABLE,   false);
+   ObjectSetInteger(0, btn, OBJPROP_HIDDEN,       true);
+   ChartRedraw();
+}
+
+void UpdateAnimButton()
+{
+   string btn = DB_PREFIX + "btn_anim";
+   if(ObjectFind(0, btn) < 0) return;
+   if(g_animations_enabled)
+   {
+      ObjectSetString (0, btn, OBJPROP_TEXT,    "ANIM  ON");
+      ObjectSetInteger(0, btn, OBJPROP_BGCOLOR,  C_VIOLET);
+      ObjectSetInteger(0, btn, OBJPROP_COLOR,    C_WHITE);
+   }
+   else
+   {
+      ObjectSetString (0, btn, OBJPROP_TEXT,    "ANIM  OFF");
+      ObjectSetInteger(0, btn, OBJPROP_BGCOLOR,  C_STEEL);
+      ObjectSetInteger(0, btn, OBJPROP_COLOR,    C_SLATE);
+   }
+   ObjectSetInteger(0, btn, OBJPROP_STATE, false);
+}
+
+void OnChartEvent(const int id, const long& lparam, const double& dparam, const string& sparam)
+{
+   if(id == CHARTEVENT_OBJECT_CLICK && sparam == DB_PREFIX + "btn_anim")
+   {
+      g_animations_enabled = !g_animations_enabled;
+      UpdateAnimButton();
+      ChartRedraw();
+   }
+}
+
 //+------------------------------------------------------------------+
