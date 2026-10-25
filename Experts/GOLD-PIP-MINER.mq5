@@ -23,6 +23,12 @@ enum ENUM_N1_MODE
    N2 = 2    // High-Impact News Only
 };
 
+enum ENUM_AFTER_MAX_DD
+{
+   DD_CONTINUE_TRADING = 0,   // Continue Trading
+   DD_STOP_TRADING     = 1    // Stop Trading
+};
+
 
 input group "=== A. INITIAL ORDER SETTINGS ==="
 input double   D1 = 1.00;                      // Pending Order Distance from Market (Price)
@@ -108,12 +114,6 @@ const bool     InpEnableLogs             = true;
 const int      InpNewsLookAheadDays      = 14;
 const bool     InpCancelPendingsForNews  = true;
 const int      InpNewsRefreshSeconds     = 30;
-
-enum ENUM_AFTER_MAX_DD
-{
-   DD_CONTINUE_TRADING = 0,   // Continue Trading
-   DD_STOP_TRADING     = 1    // Stop Trading
-};
 
 // MaxDD settings are now in input group H above (not const) so users can enable them
 
