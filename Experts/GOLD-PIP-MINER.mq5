@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//|                                 GOLD-PIP MINER EA V6 MQ5.mq5     |
+//|                              AURUM VAULT SYSTEM V2 MQ5.mq5       |
 //|                                         |
 //+------------------------------------------------------------------+
 #property strict
@@ -11,7 +11,7 @@
 #include <Trade\OrderInfo.mqh>
 
 //--- Developer Comment Constant
-const string EA_COMMENT = "GOLD-PIP MINER EA V6";
+const string EA_COMMENT = "AURUM VAULT SYSTEM V2";
 
 //+------------------------------------------------------------------+
 //| INPUT PARAMETERS                                                  |
@@ -151,7 +151,8 @@ int            g_ema_m5_handle  = INVALID_HANDLE;
 int            g_ema_m15_handle = INVALID_HANDLE;
 int            g_ema_h1_handle  = INVALID_HANDLE;
 
-bool           g_animations_enabled = true;
+bool           g_animations_enabled  = true;
+bool           g_new_trades_paused   = false;
 
 bool           g_news_blocked       = false;
 bool           g_calendar_available = true;
@@ -921,6 +922,7 @@ bool IsPositionTPCurrentlyValid(const ENUM_POSITION_TYPE type,
 
 bool IsGovernorAllowingNewTrade()
 {
+   if(g_new_trades_paused) return false;
    double margin_level = AccountInfoDouble(ACCOUNT_MARGIN_LEVEL);
    // margin_level is 0 when no positions are open — allow freely in that case
    if(margin_level > 0.0 && margin_level < InpMinMarginLevel)
@@ -1062,7 +1064,7 @@ void LogMessage(string message)
 {
    if(InpEnableLogs)
    {
-      PrintFormat("[GOLD-PIP MINER EA V6] %s", message);
+      PrintFormat("[AURUM VAULT SYSTEM V2] %s", message);
    }
 }
 
@@ -1727,7 +1729,7 @@ int OnInit()
    if(ShowDashboard)
    {
       BuildDashboard();
-      BuildAnimButtons();
+      BuildControlBar();
       BuildSpinner();
       BuildHexCore();
       if(ShowAdvancedPanels)
@@ -1750,7 +1752,7 @@ int OnInit()
               InpEnableMaxDDProtection ? "ENABLED" : "DISABLED", InpMaxDrawdownPercent));
 
    Print("===================================================");
-   Print("  GOLD-PIP MINER EA V6 (MQ5) INITIALIZED");
+   Print("  AURUM VAULT SYSTEM V2 (MQ5) INITIALIZED");
    Print("  Theme            : NEON VOID V (VIOLET/PINK/BLUE/ELECTRIC LAVENDER)");
    Print("  Dashboard        : Hybrid advanced layout | magnified balance card | "+IntegerToString(DashboardWidth)+"x"+IntegerToString(DashboardHeight));
    Print("  Sub-Panels       : "+(ShowAdvancedPanels ? "ON (sparkline, grid ladder, risk thermometer, ticker, tri-ring spinner)" : "OFF"));
@@ -1928,19 +1930,19 @@ void MaybeCleanupArrows()
 //===================================================================
 void ApplyChartTheme()
 {
-   ChartSetInteger(0, CHART_COLOR_BACKGROUND,    C_OBSIDIAN);
-   ChartSetInteger(0, CHART_COLOR_FOREGROUND,    C_SLATE);
-   ChartSetInteger(0, CHART_COLOR_GRID,          C_ONYX);
-   ChartSetInteger(0, CHART_COLOR_VOLUME,        C_STEEL);
-   ChartSetInteger(0, CHART_COLOR_CHART_UP,      C_CHARCOAL);
-   ChartSetInteger(0, CHART_COLOR_CHART_DOWN,    C_BLOOD);
-   ChartSetInteger(0, CHART_COLOR_CANDLE_BULL,   C_GOLD);
-   ChartSetInteger(0, CHART_COLOR_CANDLE_BEAR,   C_CRIMSON);
-   ChartSetInteger(0, CHART_COLOR_CHART_LINE,    C_GOLDBRIGHT);
-   ChartSetInteger(0, CHART_COLOR_BID,           C_SLATE);
-   ChartSetInteger(0, CHART_COLOR_ASK,           C_IVORY);
-   ChartSetInteger(0, CHART_COLOR_LAST,          C_WHITE);
-   ChartSetInteger(0, CHART_COLOR_STOP_LEVEL,    C_CRIMSON);
+   ChartSetInteger(0, CHART_COLOR_BACKGROUND,    C'3,2,6');
+   ChartSetInteger(0, CHART_COLOR_FOREGROUND,    C'30,26,55');
+   ChartSetInteger(0, CHART_COLOR_GRID,          C'6,5,12');
+   ChartSetInteger(0, CHART_COLOR_VOLUME,        C'16,12,30');
+   ChartSetInteger(0, CHART_COLOR_CHART_UP,      C'16,10,30');
+   ChartSetInteger(0, CHART_COLOR_CHART_DOWN,    C'28,8,18');
+   ChartSetInteger(0, CHART_COLOR_CANDLE_BULL,   C'45,28,90');
+   ChartSetInteger(0, CHART_COLOR_CANDLE_BEAR,   C'75,16,45');
+   ChartSetInteger(0, CHART_COLOR_CHART_LINE,    C'45,38,80');
+   ChartSetInteger(0, CHART_COLOR_BID,           C'25,22,50');
+   ChartSetInteger(0, CHART_COLOR_ASK,           C'35,32,70');
+   ChartSetInteger(0, CHART_COLOR_LAST,          C'45,40,85');
+   ChartSetInteger(0, CHART_COLOR_STOP_LEVEL,    C'90,12,45');
    ChartSetInteger(0, CHART_MODE, CHART_CANDLES);
    ChartRedraw();
 }
@@ -2085,8 +2087,8 @@ void BuildDashboard()
 
    // --- Header strip: main title + strap-line subtitle ---
    CreateBackgroundPanelLower(DB_PREFIX+"hdrstrip", DB_X+2, DB_Y+h-36, w-4, 34, C_CHARCOAL, C_OBSIDIAN);
-   CreateLabelLower(DB_PREFIX+"hdr", ":::::::GOLD-PIP MINER EA V6", DB_X+14, DB_Y+h-20, FS_TITLE, C_GOLDBRIGHT, true);
-   CreateLabelLower(DB_PREFIX+"hdrsub", "ROBUST DYNAMIC HYBRID ALGO", DB_X+14, DB_Y+h-35, FS_SUBTITLE, C_SLATE);
+   CreateLabelLower(DB_PREFIX+"hdr", ":::::::AURUM VAULT SYSTEM V2", DB_X+14, DB_Y+h-20, FS_TITLE, C_GOLDBRIGHT, true);
+   CreateLabelLower(DB_PREFIX+"hdrsub", "PRECISION GRID DESK", DB_X+14, DB_Y+h-35, FS_SUBTITLE, C_SLATE);
    CreateBackgroundPanelLower(DB_PREFIX+"hdrscan", DB_X+14, DB_Y+h-35, 36, 1, C_GOLDDIM, C_OBSIDIAN);
 
    CreateBackgroundPanelLower(DB_PREFIX+"livedot", DB_X+w-150, DB_Y+h-19, 9, 9, C_GREEN_OK, C_OBSIDIAN);
@@ -2137,6 +2139,15 @@ void BuildDashboard()
 
    // --- COLUMN 3 : GRID LADDER (Vertex-IQ is embedded directly beneath it) ---
    CreateLabelLower(DB_PREFIX+"sec_ladder", "TRADE LADDER PROJECTOR", c3x, colTopY, FS_SECTION, C_GOLD, true);
+
+   // Multi-TF trend alignment display
+   CreateLabelLower(DB_PREFIX+"l_tf_m5",  "M5",  c3x,     colTopY-22, FS_LABEL, C_IVORY);
+   CreateLabelLower(DB_PREFIX+"v_tf_m5",  "--",  c3x+40,  colTopY-22, FS_VALUE, C_SLATE, true);
+   CreateLabelLower(DB_PREFIX+"l_tf_m15", "M15", c3x,     colTopY-40, FS_LABEL, C_IVORY);
+   CreateLabelLower(DB_PREFIX+"v_tf_m15", "--",  c3x+40,  colTopY-40, FS_VALUE, C_SLATE, true);
+   CreateLabelLower(DB_PREFIX+"l_tf_h1",  "H1",  c3x,     colTopY-58, FS_LABEL, C_IVORY);
+   CreateLabelLower(DB_PREFIX+"v_tf_h1",  "--",  c3x+40,  colTopY-58, FS_VALUE, C_SLATE, true);
+   CreateLabelLower(DB_PREFIX+"l_tf_lbl", "TREND FILTER:", c3x, colTopY-72, FS_SUBTITLE, C_GOLDDIM);
 
    // --- COLUMN 4 : ACCOUNT — magnified balance module up top ---
    CreateLabelLower(DB_PREFIX+"sec_acct", "ACCOUNT STATISTICS", c4x, colTopY, FS_SECTION, C_GOLD, true);
@@ -2220,7 +2231,7 @@ void BuildDashboard()
    CreateLabelLower(DB_PREFIX+"v_conf2", "",            c6x+50, lY, FS_STRIP, C_IVORY, true);
 
    // --- Copyright footer (bottom-left corner, inside panel) ---
-   CreateLabelLower(DB_PREFIX+"copyright", "(c) 2026 ExpertFXHub  ::  Sovereign Dashboard IV", DB_X+w-260, DB_Y+6, FS_FOOTER, C_STEEL);
+   CreateLabelLower(DB_PREFIX+"copyright", "(c) 2026 ExpertFXHub  ::  AURUM VAULT SYSTEM V2", DB_X+w-260, DB_Y+6, FS_FOOTER, C_STEEL);
 
    ChartRedraw();
 }
@@ -3085,7 +3096,7 @@ void RefreshDashboard()
    if(ShowDashboard)
    {
       UpdateDashboard();
-      UpdateAnimButton();
+      UpdateControlBar();
       if(g_animations_enabled)
       {
          UpdateSpinner();
@@ -3189,7 +3200,8 @@ void UpdateDashboard()
    UpdLbl(DB_PREFIX+"v_ddpct", DoubleToString(ddPct,1)+"%", (ddPct>InpMaxDrawdownPercent*0.6 && InpEnableMaxDDProtection)?C_RED_BAD:C_IVORY);
 
    string sysStatus; color sysClr;
-   if(g_max_dd_emergency_active)   { sysStatus="EMERGENCY";    sysClr=C_RED_BAD; }
+   if(g_new_trades_paused)         { sysStatus="PAUSED";       sysClr=C_EMBER; }
+   else if(g_max_dd_emergency_active)   { sysStatus="EMERGENCY";    sysClr=C_RED_BAD; }
    else if(g_trading_stopped_by_max_dd) { sysStatus="DD STOPPED"; sysClr=C_RED_BAD; }
    else if(spread>P1)              { sysStatus="SPREAD ALERT"; sysClr=C_RED_BAD; }
    else if(ddPct>InpMaxDrawdownPercent*0.6 && InpEnableMaxDDProtection) { sysStatus="DD WARNING"; sysClr=C_EMBER; }
@@ -3243,6 +3255,25 @@ void UpdateDashboard()
    ObjectSetInteger(0, DB_PREFIX+"gauge_bear", OBJPROP_XSIZE, MathMax(2,bearW));
    ObjectSetInteger(0, DB_PREFIX+"gauge_bear", OBJPROP_XDISTANCE, DB_X+16+150+bullW);
    ObjectSetInteger(0, DB_PREFIX+"gauge_marker", OBJPROP_XDISTANCE, DB_X+16+150+bullW-1);
+
+   // --- Multi-TF trend alignment display ---
+   if(InpEnableTrendFilter && g_ema_m5_handle != INVALID_HANDLE)
+   {
+      double price = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+      double ema_m5[1], ema_m15[1], ema_h1[1];
+      bool ok5  = CopyBuffer(g_ema_m5_handle,  0, 0, 1, ema_m5)  >= 1;
+      bool ok15 = CopyBuffer(g_ema_m15_handle, 0, 0, 1, ema_m15) >= 1;
+      bool ok1  = CopyBuffer(g_ema_h1_handle,  0, 0, 1, ema_h1)  >= 1;
+      string s5  = !ok5  ? "--" : (price > ema_m5[0]  ? "BULL" : "BEAR");
+      string s15 = !ok15 ? "--" : (price > ema_m15[0] ? "BULL" : "BEAR");
+      string s1  = !ok1  ? "--" : (price > ema_h1[0]  ? "BULL" : "BEAR");
+      color  c5  = (s5=="BULL")  ? C_GREEN_OK : (s5=="BEAR")  ? C_RED_BAD : C_SLATE;
+      color  c15 = (s15=="BULL") ? C_GREEN_OK : (s15=="BEAR") ? C_RED_BAD : C_SLATE;
+      color  c1  = (s1=="BULL")  ? C_GREEN_OK : (s1=="BEAR")  ? C_RED_BAD : C_SLATE;
+      UpdLbl(DB_PREFIX+"v_tf_m5",  s5,  c5);
+      UpdLbl(DB_PREFIX+"v_tf_m15", s15, c15);
+      UpdLbl(DB_PREFIX+"v_tf_h1",  s1,  c1);
+   }
 
    AnimationTick = (AnimationTick + MathMax(1,AnimationSpeed)) % 200;
    bool active = (openCt > 0);
@@ -3525,6 +3556,59 @@ void DeleteAllDashboard()
    ChartRedraw();
 }
 
+void CreateCtrlBtn(string name, string text, int x, int y, int w, int h, color bg, color fg)
+{
+   if(ObjectFind(0, name) < 0)
+      ObjectCreate(0, name, OBJ_BUTTON, 0, 0, 0);
+   ObjectSetInteger(0, name, OBJPROP_CORNER,       CORNER_LEFT_UPPER);
+   ObjectSetInteger(0, name, OBJPROP_XDISTANCE,    x);
+   ObjectSetInteger(0, name, OBJPROP_YDISTANCE,    y);
+   ObjectSetInteger(0, name, OBJPROP_XSIZE,        w);
+   ObjectSetInteger(0, name, OBJPROP_YSIZE,        h);
+   ObjectSetString (0, name, OBJPROP_TEXT,         text);
+   ObjectSetString (0, name, OBJPROP_FONT,         "Arial Bold");
+   ObjectSetInteger(0, name, OBJPROP_FONTSIZE,     7);
+   ObjectSetInteger(0, name, OBJPROP_COLOR,        fg);
+   ObjectSetInteger(0, name, OBJPROP_BGCOLOR,      bg);
+   ObjectSetInteger(0, name, OBJPROP_BORDER_COLOR, C_GOLDDIM);
+   ObjectSetInteger(0, name, OBJPROP_STATE,        false);
+   ObjectSetInteger(0, name, OBJPROP_SELECTABLE,   false);
+   ObjectSetInteger(0, name, OBJPROP_HIDDEN,       true);
+}
+
+void BuildControlBar()
+{
+   long cH = ChartGetInteger(0, CHART_HEIGHT_IN_PIXELS);
+   int  topY = (int)(cH - (DB_Y + DashboardHeight - 4));
+   int  bh   = 22;
+   int  bx   = DB_X + 2;
+
+   CreateCtrlBtn(DB_PREFIX+"cb_pause",     "  PAUSE",      bx,       topY, 88,  bh, C_BLOOD,      C_IVORY);
+   CreateCtrlBtn(DB_PREFIX+"cb_closebuy",  "CLOSE BUY",   bx+92,    topY, 88,  bh, C_DEEPCRIMSON, C_IVORY);
+   CreateCtrlBtn(DB_PREFIX+"cb_closesell", "CLOSE SELL",  bx+184,   topY, 88,  bh, C_DEEPCRIMSON, C_IVORY);
+   CreateCtrlBtn(DB_PREFIX+"cb_anim",      "ANIM  ON",    DB_X+DashboardWidth-92, topY, 88, bh, C_VIOLET, C_WHITE);
+   ChartRedraw();
+}
+
+void UpdateControlBar()
+{
+   string p = DB_PREFIX+"cb_pause";
+   if(ObjectFind(0, p) < 0) return;
+   if(g_new_trades_paused)
+   { ObjectSetString(0, p, OBJPROP_TEXT, "  RESUME"); ObjectSetInteger(0, p, OBJPROP_BGCOLOR, C_BLOOD); ObjectSetInteger(0, p, OBJPROP_COLOR, C_EMBER); }
+   else
+   { ObjectSetString(0, p, OBJPROP_TEXT, "  PAUSE");  ObjectSetInteger(0, p, OBJPROP_BGCOLOR, C_CHARCOAL2); ObjectSetInteger(0, p, OBJPROP_COLOR, C_IVORY); }
+   ObjectSetInteger(0, p, OBJPROP_STATE, false);
+
+   string a = DB_PREFIX+"cb_anim";
+   if(ObjectFind(0, a) < 0) return;
+   if(g_animations_enabled)
+   { ObjectSetString(0, a, OBJPROP_TEXT, "ANIM  ON"); ObjectSetInteger(0, a, OBJPROP_BGCOLOR, C_VIOLET); ObjectSetInteger(0, a, OBJPROP_COLOR, C_WHITE); }
+   else
+   { ObjectSetString(0, a, OBJPROP_TEXT, "ANIM  OFF"); ObjectSetInteger(0, a, OBJPROP_BGCOLOR, C_STEEL); ObjectSetInteger(0, a, OBJPROP_COLOR, C_SLATE); }
+   ObjectSetInteger(0, a, OBJPROP_STATE, false);
+}
+
 void BuildAnimButtons()
 {
    string btn = DB_PREFIX + "btn_anim";
@@ -3567,10 +3651,36 @@ void UpdateAnimButton()
 
 void OnChartEvent(const int id, const long& lparam, const double& dparam, const string& sparam)
 {
-   if(id == CHARTEVENT_OBJECT_CLICK && sparam == DB_PREFIX + "btn_anim")
+   if(id != CHARTEVENT_OBJECT_CLICK) return;
+
+   if(sparam == DB_PREFIX + "cb_pause")
+   {
+      g_new_trades_paused = !g_new_trades_paused;
+      UpdateControlBar();
+      ChartRedraw();
+   }
+   else if(sparam == DB_PREFIX + "cb_closebuy")
+   {
+      for(int i = PositionsTotal()-1; i >= 0; i--)
+         if(m_position.SelectByIndex(i))
+            if(m_position.Symbol()==_Symbol && IsOurMagic(m_position.Magic()) && m_position.PositionType()==POSITION_TYPE_BUY)
+               m_trade.PositionClose(m_position.Ticket());
+      ObjectSetInteger(0, DB_PREFIX+"cb_closebuy", OBJPROP_STATE, false);
+      ChartRedraw();
+   }
+   else if(sparam == DB_PREFIX + "cb_closesell")
+   {
+      for(int i = PositionsTotal()-1; i >= 0; i--)
+         if(m_position.SelectByIndex(i))
+            if(m_position.Symbol()==_Symbol && IsOurMagic(m_position.Magic()) && m_position.PositionType()==POSITION_TYPE_SELL)
+               m_trade.PositionClose(m_position.Ticket());
+      ObjectSetInteger(0, DB_PREFIX+"cb_closesell", OBJPROP_STATE, false);
+      ChartRedraw();
+   }
+   else if(sparam == DB_PREFIX + "cb_anim" || sparam == DB_PREFIX + "btn_anim")
    {
       g_animations_enabled = !g_animations_enabled;
-      UpdateAnimButton();
+      UpdateControlBar();
       ChartRedraw();
    }
 }
