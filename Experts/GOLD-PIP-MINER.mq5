@@ -153,6 +153,7 @@ int            g_ema_h1_handle  = INVALID_HANDLE;
 
 bool           g_animations_enabled  = true;
 bool           g_new_trades_paused   = false;
+bool           g_session_enabled     = true;
 
 bool           g_news_blocked       = false;
 bool           g_calendar_available = true;
@@ -1070,7 +1071,7 @@ void LogMessage(string message)
 
 bool IsTradingSessionOpen()
 {
-   if(!F1)
+   if(!F1 || !g_session_enabled)
       return true;
 
    MqlDateTime tm;
@@ -1412,9 +1413,9 @@ void CloseAllEAPositions()
 }
 
 //===================================================================
-//  SOVEREIGN DASHBOARD IV — THEME (Crimson / Gold / Obsidian palette,
-//  extended with blend-capable gradient tiers plus a new azure/violet
-//  "neural" accent range used by the Confidence Arc and Data-Rain column)
+//  SOVEREIGN DASHBOARD IV — THEME (Azure / Obsidian palette,
+//  matching AURUM VAULT SYSTEM design — azure primary accent,
+//  gradient tiers for Vertex-IQ / Volatility / Confidence arc)
 //===================================================================
 #define C_OBSIDIAN      C'9,8,7'
 #define C_ONYX          C'15,13,11'
@@ -1423,23 +1424,26 @@ void CloseAllEAPositions()
 #define C_CRIMSON       C'150,18,26'
 #define C_DEEPCRIMSON   C'96,12,18'
 #define C_BLOOD         C'58,8,12'
-#define C_EMBER         C'205,60,46'
-#define C_GOLD          C'196,161,63'
-#define C_GOLDBRIGHT    C'255,214,110'
-#define C_GOLDDIM       C'120,98,42'
-#define C_BRASS         C'150,124,58'
 #define C_IVORY         C'224,214,192'
 #define C_SLATE         C'118,110,98'
 #define C_STEEL         C'70,64,56'
 #define C_WHITE         C'236,230,215'
-#define C_GREEN_OK      C'150,196,110'
 #define C_RED_BAD       C'205,60,46'
 #define C_SHADOW        C'4,3,3'
 #define C_AZURE         C'86,140,168'
 #define C_AZUREDIM      C'46,80,98'
+#define C_AZUREBRIGHT   C'150,210,240'
 #define C_VIOLET        C'128,96,168'
-#define C_NEONMINT      C'110,214,180'
-#define C_NEONMINTDIM   C'50,96,84'
+#define C_VIOLETBRIGHT  C'175,145,225'
+// Remapped legacy names → azure equivalents (keep names to avoid code churn)
+#define C_GOLD          C'86,140,168'    // azure
+#define C_GOLDBRIGHT    C'150,210,240'   // azurebright
+#define C_GOLDDIM       C'46,80,98'      // azuredim
+#define C_BRASS         C'86,140,168'    // azure
+#define C_EMBER         C'175,145,225'   // violetbright
+#define C_GREEN_OK      C'150,210,240'   // azurebright
+#define C_NEONMINT      C'150,210,240'   // azurebright
+#define C_NEONMINTDIM   C'46,80,98'      // azuredim
 
 // Vertex-IQ heat tiers: deep indigo (cold) -> violet -> electric lavender (hot)
 #define VTX_T0  C'7,6,12'
@@ -1930,15 +1934,15 @@ void MaybeCleanupArrows()
 //===================================================================
 void ApplyChartTheme()
 {
-   ChartSetInteger(0, CHART_COLOR_BACKGROUND,    C_OBSIDIAN);
-   ChartSetInteger(0, CHART_COLOR_FOREGROUND,    C_SLATE);
-   ChartSetInteger(0, CHART_COLOR_GRID,          C_ONYX);
-   ChartSetInteger(0, CHART_COLOR_VOLUME,        C_STEEL);
-   ChartSetInteger(0, CHART_COLOR_CHART_UP,      C_CHARCOAL);
-   ChartSetInteger(0, CHART_COLOR_CHART_DOWN,    C_BLOOD);
-   ChartSetInteger(0, CHART_COLOR_CANDLE_BULL,   C_GOLD);
-   ChartSetInteger(0, CHART_COLOR_CANDLE_BEAR,   C_CRIMSON);
-   ChartSetInteger(0, CHART_COLOR_CHART_LINE,    C_GOLDBRIGHT);
+   ChartSetInteger(0, CHART_COLOR_BACKGROUND,    C'6,7,12');
+   ChartSetInteger(0, CHART_COLOR_FOREGROUND,    C'125,135,155');
+   ChartSetInteger(0, CHART_COLOR_GRID,          C'14,16,26');
+   ChartSetInteger(0, CHART_COLOR_VOLUME,        C'50,60,90');
+   ChartSetInteger(0, CHART_COLOR_CHART_UP,      C'70,130,190');
+   ChartSetInteger(0, CHART_COLOR_CHART_DOWN,    C'150,40,50');
+   ChartSetInteger(0, CHART_COLOR_CANDLE_BULL,   C'70,140,210');
+   ChartSetInteger(0, CHART_COLOR_CANDLE_BEAR,   C'200,50,60');
+   ChartSetInteger(0, CHART_COLOR_CHART_LINE,    C_AZUREBRIGHT);
    ChartSetInteger(0, CHART_COLOR_BID,           C_SLATE);
    ChartSetInteger(0, CHART_COLOR_ASK,           C_IVORY);
    ChartSetInteger(0, CHART_COLOR_LAST,          C_WHITE);
@@ -2087,26 +2091,26 @@ void BuildDashboard()
 
    // --- Header strip: main title + strap-line subtitle ---
    CreateBackgroundPanelLower(DB_PREFIX+"hdrstrip", DB_X+2, DB_Y+h-36, w-4, 34, C_CHARCOAL, C_OBSIDIAN);
-   CreateLabelLower(DB_PREFIX+"hdr", ":::::::AURUM VAULT SYSTEM V2", DB_X+14, DB_Y+h-20, FS_TITLE, C_GOLDBRIGHT, true);
+   CreateLabelLower(DB_PREFIX+"hdr", "AURUM VAULT SYSTEM V2", DB_X+14, DB_Y+h-20, FS_TITLE, C_AZUREBRIGHT, true);
    CreateLabelLower(DB_PREFIX+"hdrsub", "PRECISION GRID DESK", DB_X+14, DB_Y+h-35, FS_SUBTITLE, C_SLATE);
-   CreateBackgroundPanelLower(DB_PREFIX+"hdrscan", DB_X+14, DB_Y+h-35, 36, 1, C_GOLDDIM, C_OBSIDIAN);
+   CreateBackgroundPanelLower(DB_PREFIX+"hdrscan", DB_X+14, DB_Y+h-35, 36, 1, C_AZUREDIM, C_OBSIDIAN);
 
-   CreateBackgroundPanelLower(DB_PREFIX+"livedot", DB_X+w-150, DB_Y+h-19, 9, 9, C_GREEN_OK, C_OBSIDIAN);
-   CreateLabelLower(DB_PREFIX+"livetxt", "LIVE", DB_X+w-134, DB_Y+h-21, FS_LIVE, C_GREEN_OK, true);
+   CreateBackgroundPanelLower(DB_PREFIX+"livedot", DB_X+w-150, DB_Y+h-19, 9, 9, C_AZUREBRIGHT, C_OBSIDIAN);
+   CreateLabelLower(DB_PREFIX+"livetxt", "LIVE", DB_X+w-134, DB_Y+h-21, FS_LIVE, C_AZUREBRIGHT, true);
 
    CreateCornerBrackets(w, h);
 
    int colTopY = DB_Y + h - 48;
 
    int c1x = DB_X + 16;           // STATE & FILTERS
-   int c2x = c1x + 195;           // GRID & RISK
+   int c2x = c1x + 235;           // GRID & RISK
    int c3x = c2x + 195;           // GRID LADDER + VERTEX-IQ (stacked)
    int c4x = c3x + 195;           // ACCOUNT
    int c5x = c4x + 215;           // PERFORMANCE
    int c6x = c5x + 195;           // SESSION / MARKET / VOLATILITY / CONFIDENCE ARC
 
    // --- COLUMN 1 : STATE & FILTERS ---
-   CreateLabelLower(DB_PREFIX+"sec_state", "STATE & FILTERS", c1x, colTopY, FS_SECTION, C_GOLD, true);
+   CreateLabelLower(DB_PREFIX+"sec_state", "STATE & FILTERS", c1x, colTopY, FS_SECTION, C_AZUREBRIGHT, true);
    CreateLabelLower(DB_PREFIX+"l_state", "State:",       c1x, colTopY-22, FS_LABEL, C_IVORY);
    CreateLabelLower(DB_PREFIX+"v_state", "",             c1x+100, colTopY-22, FS_VALUE, C_IVORY, true);
    CreateLabelLower(DB_PREFIX+"l_basket","Basket:",      c1x, colTopY-42, FS_LABEL, C_IVORY);
@@ -2131,7 +2135,7 @@ void BuildDashboard()
    CreateLabelLower(DB_PREFIX+"v_tf_h1",  "--",  c1x+176, colTopY-178, FS_VALUE, C_SLATE, true);
 
    // --- COLUMN 2 : GRID & RISK ---
-   CreateLabelLower(DB_PREFIX+"sec_grid", "RISK STATISTICS", c2x, colTopY, FS_SECTION, C_GOLD, true);
+   CreateLabelLower(DB_PREFIX+"sec_grid", "RISK STATISTICS", c2x, colTopY, FS_SECTION, C_AZUREBRIGHT, true);
    CreateLabelLower(DB_PREFIX+"l_ilot",  "Initial Lot:", c2x, colTopY-22, FS_LABEL, C_IVORY);
    CreateLabelLower(DB_PREFIX+"v_ilot",  "",             c2x+100, colTopY-22, FS_VALUE, C_IVORY, true);
    CreateLabelLower(DB_PREFIX+"l_mult",  "Lot Multiplier:",c2x, colTopY-42, FS_LABEL, C_IVORY);
@@ -2144,18 +2148,17 @@ void BuildDashboard()
    CreateLabelLower(DB_PREFIX+"v_spmax", DoubleToString(P1,2), c2x+100, colTopY-102, FS_VALUE, C_SLATE, true);
    CreateLabelLower(DB_PREFIX+"l_tp",    "Basket TP/Lot:", c2x, colTopY-122, FS_LABEL, C_IVORY);
    CreateLabelLower(DB_PREFIX+"v_tp",    "$"+DoubleToString(T1,2), c2x+100, colTopY-122, FS_VALUE, C_IVORY, true);
+   CreateLabelLower(DB_PREFIX+"l_trend", "Trend M15/H1/H4:", c2x, colTopY-142, FS_LABEL, C_IVORY);
+   CreateLabelLower(DB_PREFIX+"v_trend", "", c2x+110, colTopY-142, FS_VALUE, C_IVORY, true);
 
    // --- COLUMN 3 : GRID LADDER (Vertex-IQ is embedded directly beneath it) ---
-   CreateLabelLower(DB_PREFIX+"sec_ladder", "TRADE LADDER PROJECTOR", c3x, colTopY, FS_SECTION, C_GOLD, true);
+   CreateLabelLower(DB_PREFIX+"sec_ladder", "TRADE LADDER PROJECTOR", c3x, colTopY, FS_SECTION, C_AZUREBRIGHT, true);
 
    // --- COLUMN 4 : ACCOUNT — magnified balance module up top ---
-   CreateLabelLower(DB_PREFIX+"sec_acct", "ACCOUNT STATISTICS", c4x, colTopY, FS_SECTION, C_GOLD, true);
+   CreateLabelLower(DB_PREFIX+"sec_acct", "ACCOUNT STATISTICS", c4x, colTopY, FS_SECTION, C_AZUREBRIGHT, true);
 
-   CreateBackgroundPanelLower(DB_PREFIX+"bal_shadow", c4x-2, colTopY-58, 200, 44, C_SHADOW, C_OBSIDIAN);
-   CreateBackgroundPanelLower(DB_PREFIX+"bal_box",     c4x-6, colTopY-56, 200, 44, C_CHARCOAL2, C_GOLD);
-   CreateBackgroundPanelLower(DB_PREFIX+"bal_accent",  c4x-6, colTopY-14, 200, 2,  C_GOLDBRIGHT, C_OBSIDIAN);
-   CreateLabelLower(DB_PREFIX+"l_bal_cap", ":::ACCOUNT BALANCE", c4x+4, colTopY-40, FS_BAL_CAP, C_GOLDDIM, true);
-   CreateLabelLower(DB_PREFIX+"v_bal",     "",                c4x+4, colTopY-54, FS_BAL_VAL, C_GOLDBRIGHT, true);
+   CreateLabelLower(DB_PREFIX+"l_bal_cap", "ACCOUNT BALANCE", c4x+4, colTopY-40, FS_BAL_CAP, C_AZURE, true);
+   CreateLabelLower(DB_PREFIX+"v_bal",     "",                c4x+4, colTopY-54, FS_BAL_VAL, C_AZUREBRIGHT, true);
 
    CreateLabelLower(DB_PREFIX+"l_eq",    "Account-Equity:",     c4x, colTopY-76, FS_LABEL, C_IVORY);
    CreateLabelLower(DB_PREFIX+"v_eq",    "",            c4x+100, colTopY-76, FS_VALUE, C_IVORY, true);
@@ -2165,7 +2168,7 @@ void BuildDashboard()
    CreateLabelLower(DB_PREFIX+"v_openpl","",            c4x+100, colTopY-116, FS_VALUE, C_IVORY, true);
 
    // --- COLUMN 5 : PERFORMANCE ---
-   CreateLabelLower(DB_PREFIX+"sec_perf", "PERFORMANCE", c5x, colTopY, FS_SECTION, C_GOLD, true);
+   CreateLabelLower(DB_PREFIX+"sec_perf", "PERFORMANCE", c5x, colTopY, FS_SECTION, C_AZUREBRIGHT, true);
    CreateLabelLower(DB_PREFIX+"l_win",   "Win/Loss:",   c5x, colTopY-22, FS_LABEL, C_IVORY);
    CreateLabelLower(DB_PREFIX+"v_win",   "",            c5x+90, colTopY-22, FS_VALUE, C_IVORY, true);
    CreateLabelLower(DB_PREFIX+"l_total", "Total:",      c5x, colTopY-42, FS_LABEL, C_IVORY);
@@ -2184,13 +2187,13 @@ void BuildDashboard()
    CreateLabelLower(DB_PREFIX+"v_fm",    "",            c5x+90, colTopY-162, FS_VALUE, C_IVORY, true);
 
    // --- COLUMN 6 : SESSION / MARKET / VOLATILITY / CONFIDENCE ARC (header only) ---
-   CreateLabelLower(DB_PREFIX+"sec_extra", "LIVE INTELLIGENCE", c6x, colTopY, FS_SECTION, C_GOLD, true);
+   CreateLabelLower(DB_PREFIX+"sec_extra", "LIVE INTELLIGENCE", c6x, colTopY, FS_SECTION, C_AZUREBRIGHT, true);
 
    // --- Thin gold column dividers (7 zones total, including the data-rain strip) ---
    int dividerTopY = colTopY + 14;
    int dividerBotY = 170;
    int dividerH    = dividerTopY - dividerBotY;
-   CreateBackgroundPanelLower(DB_PREFIX+"div1", c1x+195, dividerBotY, 1, dividerH, C_STEEL, C_OBSIDIAN);
+   CreateBackgroundPanelLower(DB_PREFIX+"div1", c2x,     dividerBotY, 1, dividerH, C_STEEL, C_OBSIDIAN);
    CreateBackgroundPanelLower(DB_PREFIX+"div2", c2x+195, dividerBotY, 1, dividerH, C_STEEL, C_OBSIDIAN);
    CreateBackgroundPanelLower(DB_PREFIX+"div3", c3x+195, dividerBotY, 1, dividerH, C_STEEL, C_OBSIDIAN);
    CreateBackgroundPanelLower(DB_PREFIX+"div4", c4x+215, dividerBotY, 1, dividerH, C_STEEL, C_OBSIDIAN);
@@ -2211,22 +2214,22 @@ void BuildDashboard()
    int lY = 64;
    CreateBackgroundPanelLower(DB_PREFIX+"lic_strip", DB_X+4, lY-8, w-8, 24, C_CHARCOAL, C_OBSIDIAN);
 
-   CreateLabelLower(DB_PREFIX+"l_grd2",  "GUARD:",      c1x, lY, FS_STRIP, C_GOLD, true);
+   CreateLabelLower(DB_PREFIX+"l_grd2",  "GUARD:",      c1x, lY, FS_STRIP, C_AZURE, true);
    CreateLabelLower(DB_PREFIX+"v_grd2",  "",            c1x+72, lY, FS_STRIP, C_IVORY, true);
 
-   CreateLabelLower(DB_PREFIX+"l_streak","STREAK:",     c2x, lY, FS_STRIP, C_GOLD, true);
+   CreateLabelLower(DB_PREFIX+"l_streak","STREAK:",     c2x, lY, FS_STRIP, C_AZURE, true);
    CreateLabelLower(DB_PREFIX+"v_streak","",            c2x+72, lY, FS_STRIP, C_IVORY, true);
 
-   CreateLabelLower(DB_PREFIX+"l_magic", "MAGIC:",      c3x, lY, FS_STRIP, C_GOLD, true);
+   CreateLabelLower(DB_PREFIX+"l_magic", "MAGIC:",      c3x, lY, FS_STRIP, C_AZURE, true);
    CreateLabelLower(DB_PREFIX+"v_magic", IntegerToString((int)M1)+" / "+IntegerToString((int)M2), c3x+72, lY, FS_STRIP, C_IVORY, true);
 
-   CreateLabelLower(DB_PREFIX+"l_ddpct", "DD%:",        c4x, lY, FS_STRIP, C_GOLD, true);
+   CreateLabelLower(DB_PREFIX+"l_ddpct", "DD%:",        c4x, lY, FS_STRIP, C_AZURE, true);
    CreateLabelLower(DB_PREFIX+"v_ddpct", "",            c4x+50, lY, FS_STRIP, C_IVORY, true);
 
-   CreateLabelLower(DB_PREFIX+"l_hb",    "OPTIX:",  c5x, lY, FS_STRIP, C_GOLD, true);
-   CreateBackgroundPanelLower(DB_PREFIX+"hb_dot", c5x+82, lY+1, 6, 6, C_GOLD, C_OBSIDIAN);
+   CreateLabelLower(DB_PREFIX+"l_hb",    "OPTIX:",  c5x, lY, FS_STRIP, C_AZURE, true);
+   CreateBackgroundPanelLower(DB_PREFIX+"hb_dot", c5x+82, lY+1, 6, 6, C_AZURE, C_OBSIDIAN);
 
-   CreateLabelLower(DB_PREFIX+"l_conf2", "CONF:",       c6x, lY, FS_STRIP, C_GOLD, true);
+   CreateLabelLower(DB_PREFIX+"l_conf2", "CONF:",       c6x, lY, FS_STRIP, C_AZURE, true);
    CreateLabelLower(DB_PREFIX+"v_conf2", "",            c6x+50, lY, FS_STRIP, C_IVORY, true);
 
    // --- Copyright footer (bottom-left corner, inside panel) ---
@@ -3278,6 +3281,9 @@ void UpdateDashboard()
       UpdLbl(DB_PREFIX+"v_tf_m5",  s5,  c5);
       UpdLbl(DB_PREFIX+"v_tf_m15", s15, c15);
       UpdLbl(DB_PREFIX+"v_tf_h1",  s1,  c1);
+      string trendSummary = s15 + "/" + s1;
+      color  trendClr = (s15==s1 && s15!="--") ? ((s15=="BULL") ? C_GREEN_OK : C_RED_BAD) : C_SLATE;
+      UpdLbl(DB_PREFIX+"v_trend", trendSummary, trendClr);
    }
 
    AnimationTick = (AnimationTick + MathMax(1,AnimationSpeed)) % 200;
@@ -3286,8 +3292,7 @@ void UpdateDashboard()
    color pulse = active ? BlendColor(C_GOLD, C_GOLDBRIGHT, headerGlow) : C_GOLD;
    ObjectSetInteger(0, DB_PREFIX+"hdr", OBJPROP_COLOR, pulse);
    bool dotOn = (AnimationTick % 10) < 6;
-   ObjectSetInteger(0, DB_PREFIX+"livedot", OBJPROP_BGCOLOR, dotOn ? (color)C_GREEN_OK : (color)C_CHARCOAL2);
-   ObjectSetInteger(0, DB_PREFIX+"bal_accent", OBJPROP_BGCOLOR, pulse);
+   ObjectSetInteger(0, DB_PREFIX+"livedot", OBJPROP_BGCOLOR, dotOn ? (color)C_AZUREBRIGHT : (color)C_CHARCOAL2);
 
    ChartRedraw();
 }
@@ -3561,21 +3566,21 @@ void DeleteAllDashboard()
    ChartRedraw();
 }
 
-void CreateCtrlBtn(string name, string text, int x, int y, int w, int h, color bg, color fg)
+void CreateButtonLower(string name, string text, int x, int y, int w, int h, int fs, color bg, color fg)
 {
    if(ObjectFind(0, name) < 0)
       ObjectCreate(0, name, OBJ_BUTTON, 0, 0, 0);
-   ObjectSetInteger(0, name, OBJPROP_CORNER,       CORNER_LEFT_UPPER);
+   ObjectSetInteger(0, name, OBJPROP_CORNER,       CORNER_LEFT_LOWER);
    ObjectSetInteger(0, name, OBJPROP_XDISTANCE,    x);
    ObjectSetInteger(0, name, OBJPROP_YDISTANCE,    y);
    ObjectSetInteger(0, name, OBJPROP_XSIZE,        w);
    ObjectSetInteger(0, name, OBJPROP_YSIZE,        h);
    ObjectSetString (0, name, OBJPROP_TEXT,         text);
    ObjectSetString (0, name, OBJPROP_FONT,         "Arial Bold");
-   ObjectSetInteger(0, name, OBJPROP_FONTSIZE,     7);
+   ObjectSetInteger(0, name, OBJPROP_FONTSIZE,     fs);
    ObjectSetInteger(0, name, OBJPROP_COLOR,        fg);
    ObjectSetInteger(0, name, OBJPROP_BGCOLOR,      bg);
-   ObjectSetInteger(0, name, OBJPROP_BORDER_COLOR, C_GOLDDIM);
+   ObjectSetInteger(0, name, OBJPROP_BORDER_COLOR, C_AZUREDIM);
    ObjectSetInteger(0, name, OBJPROP_STATE,        false);
    ObjectSetInteger(0, name, OBJPROP_SELECTABLE,   false);
    ObjectSetInteger(0, name, OBJPROP_HIDDEN,       true);
@@ -3583,38 +3588,61 @@ void CreateCtrlBtn(string name, string text, int x, int y, int w, int h, color b
 
 void BuildControlBar()
 {
-   long cH  = ChartGetInteger(0, CHART_HEIGHT_IN_PIXELS);
-   // Place buttons inside the 34px header strip.
-   // Header strip top-from-chart-top = chartH - (DB_Y + DashboardHeight - 2)
-   int  hdrTop = (int)cH - (DB_Y + DashboardHeight - 2);
-   int  btnY   = hdrTop + 6;   // 6px below header strip top edge
-   int  bh     = 22;
-   int  bx     = DB_X + 330;   // start after title text (~310px wide)
+   int h  = DashboardHeight;
+   int dy = DB_Y + h - 34;   // y from chart bottom — sits inside 34px header strip
+   int dh = 26;
+   int fs = 7;
+   int bx = DB_X + 370;
 
-   CreateCtrlBtn(DB_PREFIX+"cb_pause",     "  PAUSE",     bx,      btnY, 90, bh, C_CHARCOAL2,   C_IVORY);
-   CreateCtrlBtn(DB_PREFIX+"cb_closebuy",  "CLOSE BUY",  bx+94,   btnY, 90, bh, C_DEEPCRIMSON, C_IVORY);
-   CreateCtrlBtn(DB_PREFIX+"cb_closesell", "CLOSE SELL", bx+188,  btnY, 90, bh, C_DEEPCRIMSON, C_IVORY);
-   CreateCtrlBtn(DB_PREFIX+"cb_anim",      "ANIM  ON",   DB_X+DashboardWidth-94, btnY, 90, bh, C_VIOLET, C_WHITE);
+   CreateButtonLower(DB_PREFIX+"pause_btn",  "PAUSE",      bx,       dy, 100, dh, fs, C_CHARCOAL2, C_SLATE); bx += 104;
+   CreateButtonLower(DB_PREFIX+"closeB_btn", "CLOSE BUY",  bx,       dy,  88, dh, fs, C_CHARCOAL2, C_SLATE); bx += 92;
+   CreateButtonLower(DB_PREFIX+"closeS_btn", "CLOSE SELL", bx,       dy,  88, dh, fs, C_CHARCOAL2, C_SLATE); bx += 92;
+   CreateButtonLower(DB_PREFIX+"sess_btn",   "SESSION: ON",bx,       dy, 100, dh, fs, C_CHARCOAL2, C_SLATE); bx += 104;
+   CreateButtonLower(DB_PREFIX+"vtx_btn",    "VTX",        bx,       dy,  46, dh, fs, C_CHARCOAL2, C_SLATE); bx += 50;
+   CreateButtonLower(DB_PREFIX+"adv_btn",    "ADV",        bx,       dy,  46, dh, fs, C_CHARCOAL2, C_SLATE); bx += 50;
+   CreateButtonLower(DB_PREFIX+"rain_btn",   "RAIN",       bx,       dy,  46, dh, fs, C_CHARCOAL2, C_SLATE); bx += 50;
+   CreateButtonLower(DB_PREFIX+"cb_anim",    "ANIM ON",    DB_X+DashboardWidth-94, dy, 90, dh, fs, C_VIOLETBRIGHT, C_OBSIDIAN);
    ChartRedraw();
+}
+
+void UpdBtn(string name, string text, color bg, color fg)
+{
+   if(ObjectFind(0, name) < 0) return;
+   ObjectSetString (0, name, OBJPROP_TEXT,   text);
+   ObjectSetInteger(0, name, OBJPROP_BGCOLOR, bg);
+   ObjectSetInteger(0, name, OBJPROP_COLOR,   fg);
+   ObjectSetInteger(0, name, OBJPROP_STATE,   false);
 }
 
 void UpdateControlBar()
 {
-   string p = DB_PREFIX+"cb_pause";
-   if(ObjectFind(0, p) < 0) return;
-   if(g_new_trades_paused)
-   { ObjectSetString(0, p, OBJPROP_TEXT, "  RESUME"); ObjectSetInteger(0, p, OBJPROP_BGCOLOR, C_BLOOD); ObjectSetInteger(0, p, OBJPROP_COLOR, C_EMBER); }
-   else
-   { ObjectSetString(0, p, OBJPROP_TEXT, "  PAUSE");  ObjectSetInteger(0, p, OBJPROP_BGCOLOR, C_CHARCOAL2); ObjectSetInteger(0, p, OBJPROP_COLOR, C_IVORY); }
-   ObjectSetInteger(0, p, OBJPROP_STATE, false);
+   if(ObjectFind(0, DB_PREFIX+"pause_btn") < 0) return;
 
-   string a = DB_PREFIX+"cb_anim";
-   if(ObjectFind(0, a) < 0) return;
-   if(g_animations_enabled)
-   { ObjectSetString(0, a, OBJPROP_TEXT, "ANIM  ON"); ObjectSetInteger(0, a, OBJPROP_BGCOLOR, C_VIOLET); ObjectSetInteger(0, a, OBJPROP_COLOR, C_WHITE); }
+   bool blinkOn = (AnimationTick % 10) < 5;
+   if(g_new_trades_paused)
+      UpdBtn(DB_PREFIX+"pause_btn",  "RESUME", blinkOn ? C_VIOLETBRIGHT : C_CHARCOAL2, C_WHITE);
    else
-   { ObjectSetString(0, a, OBJPROP_TEXT, "ANIM  OFF"); ObjectSetInteger(0, a, OBJPROP_BGCOLOR, C_STEEL); ObjectSetInteger(0, a, OBJPROP_COLOR, C_SLATE); }
-   ObjectSetInteger(0, a, OBJPROP_STATE, false);
+      UpdBtn(DB_PREFIX+"pause_btn",  "PAUSE",  C_CHARCOAL2, C_SLATE);
+
+   if(GetPositionCount(POSITION_TYPE_BUY) > 0)
+      UpdBtn(DB_PREFIX+"closeB_btn", "CLOSE BUY",  C_AZURE, C_OBSIDIAN);
+   else
+      UpdBtn(DB_PREFIX+"closeB_btn", "CLOSE BUY",  C_CHARCOAL2, C_STEEL);
+
+   if(GetPositionCount(POSITION_TYPE_SELL) > 0)
+      UpdBtn(DB_PREFIX+"closeS_btn", "CLOSE SELL", C_AZURE, C_OBSIDIAN);
+   else
+      UpdBtn(DB_PREFIX+"closeS_btn", "CLOSE SELL", C_CHARCOAL2, C_STEEL);
+
+   if(g_session_enabled)
+      UpdBtn(DB_PREFIX+"sess_btn", "SESSION: ON",  C_AZUREDIM, C_WHITE);
+   else
+      UpdBtn(DB_PREFIX+"sess_btn", "SESSION: OFF", C_CHARCOAL2, C_SLATE);
+
+   if(g_animations_enabled)
+      UpdBtn(DB_PREFIX+"cb_anim", "ANIM ON",  C_VIOLETBRIGHT, C_OBSIDIAN);
+   else
+      UpdBtn(DB_PREFIX+"cb_anim", "ANIM OFF", C_STEEL, C_SLATE);
 }
 
 void BuildAnimButtons()
@@ -3631,7 +3659,7 @@ void BuildAnimButtons()
    ObjectSetInteger(0, btn, OBJPROP_FONTSIZE,     8);
    ObjectSetInteger(0, btn, OBJPROP_COLOR,        C_WHITE);
    ObjectSetInteger(0, btn, OBJPROP_BGCOLOR,      C_VIOLET);
-   ObjectSetInteger(0, btn, OBJPROP_BORDER_COLOR, C_GOLDBRIGHT);
+   ObjectSetInteger(0, btn, OBJPROP_BORDER_COLOR, C_AZUREBRIGHT);
    ObjectSetInteger(0, btn, OBJPROP_STATE,        false);
    ObjectSetInteger(0, btn, OBJPROP_SELECTABLE,   false);
    ObjectSetInteger(0, btn, OBJPROP_HIDDEN,       true);
@@ -3661,28 +3689,34 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
 {
    if(id != CHARTEVENT_OBJECT_CLICK) return;
 
-   if(sparam == DB_PREFIX + "cb_pause")
+   if(sparam == DB_PREFIX + "pause_btn")
    {
       g_new_trades_paused = !g_new_trades_paused;
       UpdateControlBar();
       ChartRedraw();
    }
-   else if(sparam == DB_PREFIX + "cb_closebuy")
+   else if(sparam == DB_PREFIX + "closeB_btn")
    {
       for(int i = PositionsTotal()-1; i >= 0; i--)
          if(m_position.SelectByIndex(i))
             if(m_position.Symbol()==_Symbol && IsOurMagic(m_position.Magic()) && m_position.PositionType()==POSITION_TYPE_BUY)
                m_trade.PositionClose(m_position.Ticket());
-      ObjectSetInteger(0, DB_PREFIX+"cb_closebuy", OBJPROP_STATE, false);
+      ObjectSetInteger(0, DB_PREFIX+"closeB_btn", OBJPROP_STATE, false);
       ChartRedraw();
    }
-   else if(sparam == DB_PREFIX + "cb_closesell")
+   else if(sparam == DB_PREFIX + "closeS_btn")
    {
       for(int i = PositionsTotal()-1; i >= 0; i--)
          if(m_position.SelectByIndex(i))
             if(m_position.Symbol()==_Symbol && IsOurMagic(m_position.Magic()) && m_position.PositionType()==POSITION_TYPE_SELL)
                m_trade.PositionClose(m_position.Ticket());
-      ObjectSetInteger(0, DB_PREFIX+"cb_closesell", OBJPROP_STATE, false);
+      ObjectSetInteger(0, DB_PREFIX+"closeS_btn", OBJPROP_STATE, false);
+      ChartRedraw();
+   }
+   else if(sparam == DB_PREFIX + "sess_btn")
+   {
+      g_session_enabled = !g_session_enabled;
+      UpdateControlBar();
       ChartRedraw();
    }
    else if(sparam == DB_PREFIX + "cb_anim" || sparam == DB_PREFIX + "btn_anim")
