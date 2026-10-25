@@ -66,6 +66,7 @@ input bool     F4 = false;                     // Enable USD Economic News Filte
 input ENUM_N1_MODE InpNewsMode = N2;           // News Importance Level
 input int      T6 = 30;                        // Pause Before News (Minutes)
 input int      T7 = 30;                        // Resume After News (Minutes)
+input string   InpExtraCurrencies = "";        // Extra currencies for news filter, comma-separated (e.g. EUR,GBP)
 
 input bool     ShowDashboard      = true;      // Show the Sovereign dashboard
 input bool     ShowVertexIQ       = true;      // Show the Vertex-IQ heat panel
@@ -1195,57 +1196,87 @@ void UpdateNewsState(const bool force_refresh = false)
    datetime from_time = now - after_minutes * 60;
    datetime to_time   = now + lookahead_days * 86400;
 
-   MqlCalendarValue values[];
-   ResetLastError();
-   int count = CalendarValueHistory(values, from_time, to_time, NULL, "USD");
-   if(count < 0)
+   string scan_curs[];
+   ArrayResize(scan_curs, 1);
+   scan_curs[0] = "USD";
+   if(StringLen(InpExtraCurrencies) > 0)
    {
-      ResetNewsCache(false);
-      if(InpEnableLogs)
-         PrintFormat("[GOLD-PIP MINER EA V6] MQL5 calendar query failed. Error: %d", GetLastError());
-      return;
+      string extras[];
+      int ne = StringSplit(InpExtraCurrencies, StringGetCharacter(",", 0), extras);
+      for(int e = 0; e < ne; e++)
+      {
+         string cur = extras[e];
+         StringTrimLeft(cur); StringTrimRight(cur); StringToUpper(cur);
+         if(StringLen(cur) < 2) continue;
+         bool dup = false;
+         for(int k = 0; k < ArraySize(scan_curs); k++)
+            if(scan_curs[k] == cur) { dup = true; break; }
+         if(!dup) { int sz = ArraySize(scan_curs); ArrayResize(scan_curs, sz+1); scan_curs[sz] = cur; }
+      }
    }
 
    datetime nearest_upcoming_time = 0;
    string nearest_upcoming_name = "";
    datetime active_event_time = 0;
    string active_event_name = "";
+   bool any_calendar_ok = false;
 
-   for(int i = 0; i < count; i++)
+   for(int c = 0; c < ArraySize(scan_curs); c++)
    {
-      MqlCalendarEvent event;
-      if(!CalendarEventById(values[i].event_id, event))
-         continue;
-
-      if(!IsSelectedNewsImportance(event.importance))
-         continue;
-
-      datetime event_time = values[i].time;
-      if(event_time <= 0)
-         continue;
-
-      bool inside_block_window = (now >= event_time - before_minutes * 60 &&
-                                  now <= event_time + after_minutes * 60);
-
-      if(inside_block_window)
+      MqlCalendarValue values[];
+      ResetLastError();
+      int count = CalendarValueHistory(values, from_time, to_time, NULL, scan_curs[c]);
+      if(count < 0)
       {
-         long event_distance = (event_time >= now ? (long)(event_time - now) : (long)(now - event_time));
-         long active_distance = 0;
-         if(active_event_time > 0)
-            active_distance = (active_event_time >= now ? (long)(active_event_time - now) : (long)(now - active_event_time));
+         if(InpEnableLogs)
+            PrintFormat("[NEWS] Calendar query failed for %s. Error: %d", scan_curs[c], GetLastError());
+         continue;
+      }
+      any_calendar_ok = true;
 
-         if(active_event_time == 0 || event_distance < active_distance)
+      for(int i = 0; i < count; i++)
+      {
+         MqlCalendarEvent event;
+         if(!CalendarEventById(values[i].event_id, event))
+            continue;
+
+         if(!IsSelectedNewsImportance(event.importance))
+            continue;
+
+         datetime event_time = values[i].time;
+         if(event_time <= 0)
+            continue;
+
+         bool inside_block_window = (now >= event_time - before_minutes * 60 &&
+                                     now <= event_time + after_minutes * 60);
+
+         if(inside_block_window)
          {
-            active_event_time = event_time;
-            active_event_name = event.name;
+            long event_distance = (event_time >= now ? (long)(event_time - now) : (long)(now - event_time));
+            long active_distance = 0;
+            if(active_event_time > 0)
+               active_distance = (active_event_time >= now ? (long)(active_event_time - now) : (long)(now - active_event_time));
+
+            if(active_event_time == 0 || event_distance < active_distance)
+            {
+               active_event_time = event_time;
+               active_event_name = event.name;
+            }
+         }
+
+         if(event_time > now && (nearest_upcoming_time == 0 || event_time < nearest_upcoming_time))
+         {
+            nearest_upcoming_time = event_time;
+            nearest_upcoming_name = event.name;
          }
       }
+   }
 
-      if(event_time > now && (nearest_upcoming_time == 0 || event_time < nearest_upcoming_time))
-      {
-         nearest_upcoming_time = event_time;
-         nearest_upcoming_name = event.name;
-      }
+   if(!any_calendar_ok)
+   {
+      ResetNewsCache(false);
+      if(InpEnableLogs) Print("[NEWS] All calendar queries failed.");
+      return;
    }
 
    if(active_event_time > 0)
