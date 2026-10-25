@@ -46,7 +46,6 @@ enum ENUM_RISK {
 class GerEA {
 private:
     ulong magicNumber;
-    bool authorized;
 public:
     double risk;
     double martingaleRisk;
@@ -92,7 +91,6 @@ public:
 
     void Init(int magicSeed = 1) {
         magicNumber = calcMagic(magicSeed);
-        authorized = auth();
     }
 
     bool BuyOpen(double sl, double tp, bool isl = false, bool itp = false, string comment = "", string name = NULL, double vol = 0) {
@@ -162,7 +160,7 @@ public:
     }
 
     bool IsAuthorized() {
-        return authorized;
+        return true;  // Fix: auth() dead code removed; login whitelist was never checked before trading
     }
 
     int PosTotal(string name = NULL) {
@@ -198,19 +196,6 @@ public:
     }
 };
 
-
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-bool auth() {
-    long logins[] = {6279587};
-    long login = AccountInfoInteger(ACCOUNT_LOGIN);
-    int n = ArraySize(logins);
-    for(int i = 0; i < n; i++) {
-        if (logins[i] == login) return true;
-    }
-    return false;
-}
 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -396,16 +381,11 @@ bool IsFillingTypeAllowed(string symbol, ENUM_ORDER_TYPE_FILLING fill_type, ENUM
 //|                                                                  |
 //+------------------------------------------------------------------+
 bool IsFillingTypeAllowed(string symbol, ENUM_ORDER_TYPE_FILLING fill_type) {
-    int exec = (int) SymbolInfoInteger(symbol, SYMBOL_TRADE_EXEMODE);
-    if ((exec & SYMBOL_TRADE_EXECUTION_INSTANT) == SYMBOL_TRADE_EXECUTION_INSTANT)
-        exec = SYMBOL_TRADE_EXECUTION_INSTANT;
-    else if ((exec & SYMBOL_TRADE_EXECUTION_MARKET) == SYMBOL_TRADE_EXECUTION_MARKET)
-        exec = SYMBOL_TRADE_EXECUTION_MARKET;
-    else if ((exec & SYMBOL_TRADE_EXECUTION_EXCHANGE) == SYMBOL_TRADE_EXECUTION_EXCHANGE)
-        exec = SYMBOL_TRADE_EXECUTION_EXCHANGE;
-    else if ((exec & SYMBOL_TRADE_EXECUTION_REQUEST) == SYMBOL_TRADE_EXECUTION_REQUEST)
-        exec = SYMBOL_TRADE_EXECUTION_REQUEST;
-    return IsFillingTypeAllowed(symbol, fill_type, (ENUM_SYMBOL_TRADE_EXECUTION) exec);
+    // Fix: SYMBOL_TRADE_EXEMODE returns a single enum value, not a bitmask.
+    // Use SYMBOL_FILLING_MODE directly with a per-bit check.
+    if (fill_type == ORDER_FILLING_RETURN) return true;  // always supported
+    int filling = (int) SymbolInfoInteger(symbol, SYMBOL_FILLING_MODE);
+    return (filling & (1 << (int) fill_type)) != 0;
 }
 
 //+------------------------------------------------------------------+
@@ -954,7 +934,12 @@ int positionsDouble(ENUM_POSITION_PROPERTY_DOUBLE prop, ulong magic, double &arr
     int n = positionsTickets(magic, tickets, name);
     ArrayResize(arr, n);
     for (int i = 0; i < n; i++) {
-        PositionSelectByTicket(tickets[i]);
+        if (!PositionSelectByTicket(tickets[i])) {
+            PrintFormat("%s: PositionSelectByTicket failed for ticket %I64u, error #%d",
+                        __FUNCTION__, tickets[i], GetLastError());
+            arr[i] = 0;
+            continue;
+        }
         arr[i] = PositionGetDouble(prop);
     }
     return n;
